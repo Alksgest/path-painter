@@ -6,6 +6,6 @@ export interface TmpBodyModel {
   };
 }
 
-export interface ExpressMiddlewareInterface {
+export interface IExpressMiddleware {
   use(request: Request, response: Response, next: (err?: any) => any): any;
 }

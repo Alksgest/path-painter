@@ -50,7 +50,7 @@ export function FromQuery(
   Reflect.defineMetadata(queryMetadataKey, existingParams, target, propertyKey);
 }
 
-export function _FromParam(name: string): ParameterDecorator {
+export function FromParam(name: string): ParameterDecorator {
   return function (
     target: Object,
     propertyKey: string | symbol,
@@ -70,17 +70,4 @@ export function _FromParam(name: string): ParameterDecorator {
 
     Reflect.defineMetadata(paramNameMetadataKey, name, target, propertyKey);
   };
-}
-
-export function FromParam(
-  target: Object,
-  propertyKey: string | symbol,
-  parameterIndex: number
-) {
-  let existingParams: number[] =
-    Reflect.getOwnMetadata(paramMetadataKey, target, propertyKey) || [];
-
-  existingParams.push(parameterIndex);
-
-  Reflect.defineMetadata(paramMetadataKey, existingParams, target, propertyKey);
 }

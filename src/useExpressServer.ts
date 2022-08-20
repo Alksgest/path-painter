@@ -11,7 +11,7 @@ import {
   emptySymbol,
 } from "./types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "./util";
-import { ExpressMiddlewareInterface } from "./types/web";
+import { IExpressMiddleware } from "./types/web";
 
 const registerMethodSwitchObj: {
   [key: string]: (
@@ -151,7 +151,7 @@ const registerMiddlewares = (
 
   for (const middleware of middlewaresClasses) {
     // TODO: get from DI
-    const obj: ExpressMiddlewareInterface = new (middleware as any)();
+    const obj: IExpressMiddleware = new (middleware as any)();
     const handler = obj.use;
 
     app.use(

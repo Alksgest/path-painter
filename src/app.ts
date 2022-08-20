@@ -8,15 +8,13 @@ import {
   Get,
   FromHeader,
   FromQuery,
-  _FromParam,
+  FromParam,
   UseBefore,
   UseAfter,
 } from "./decorators";
-import { ExpressMiddlewareInterface } from "./types/web";
-import { ParamsDictionary } from "express-serve-static-core";
-import { ParsedQs } from "qs";
+import { IExpressMiddleware } from "./types/web";
 
-class TestMiddleware implements ExpressMiddlewareInterface {
+class TestMiddleware implements IExpressMiddleware {
   use(request: Request, response: Response, next: (err?: any) => any) {
     console.log("Hello from middleware!");
 
@@ -28,27 +26,27 @@ class TestMiddleware implements ExpressMiddlewareInterface {
 
 @Controller()
 export class TestController {
-  // @Post()
-  // testPost(
-  //   @FromQuery param1: string,
-  //   @FromHeader field: string,
-  //   @FromBody anotherField: string
-  // ) {
-  //   console.log("param1: ", param1);
-  //   console.log("field: ", field);
-  //   console.log("anotherField: ", anotherField);
-  //   return field;
-  // }
-  // @Get()
-  // testGet() {
-  //   console.log("test get");
-  //   return "TEST GET";
-  // }
+  @Post()
+  testPost(
+    @FromQuery param1: string,
+    @FromHeader field: string,
+    @FromBody anotherField: string
+  ) {
+    console.log("param1: ", param1);
+    console.log("field: ", field);
+    console.log("anotherField: ", anotherField);
+    return field;
+  }
+  @Get()
+  testGet() {
+    console.log("test get");
+    return "TEST GET";
+  }
 
   @UseAfter(TestMiddleware)
   @UseBefore(TestMiddleware)
   @Get("byId/:id")
-  testGetWithParam(@_FromParam("id") id: string) {
+  testGetWithParam(@FromParam("id") id: string) {
     console.log("controller method invoke!");
     return id;
   }
@@ -60,11 +58,6 @@ const config = {
 };
 
 let app: Express = express();
-
-// app.get("*", (req, res) => {
-//   console.log("req.params: ", req.params);
-//   res.send();
-// });
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
