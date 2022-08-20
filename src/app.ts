@@ -2,14 +2,14 @@ import bodyParser from "body-parser";
 import express, { Express } from "express";
 import { useExpressServer } from "./useExpressServer";
 import { Controller, Post, FromBody, Get } from "./decorators";
-import { createServer } from "http";
-import cors from "cors";
 
 @Controller()
 export class TestController {
   @Post()
-  testPost(@FromBody fiel: string) {
-    return fiel;
+  testPost(field: string, @FromBody anotherField: string) {
+    console.log("field: ", field);
+    console.log("anotherField: ", anotherField);
+    return field;
   }
   @Get()
   testGet() {
@@ -19,12 +19,11 @@ export class TestController {
 }
 
 const config = {
+  cors: true,
   controllers: [TestController],
 };
 
 let app: Express = express();
-
-app.use(cors());
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

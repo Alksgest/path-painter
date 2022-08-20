@@ -1,3 +1,4 @@
 export interface ControllerBaseConfig {
-    controllers: Function[];
-  }
+  cors?: boolean | string;
+  controllers?: Function[];
+}

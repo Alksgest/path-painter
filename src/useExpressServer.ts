@@ -1,8 +1,12 @@
+import cors from "cors";
 import { Express, Request, Response } from "express";
 import "reflect-metadata";
-import { controllerMetadataKey, bodyDataMetadataKey } from "./decorators";
+import {
+  controllerMetadataKey,
+  bodyDataMetadataKey,
+  headersDataMetadataKey,
+} from "./decorators";
 import { ControllerBaseConfig } from "./types/settings";
-import { getFunctionArgumentsList } from "./util";
 
 const switchObj: {
   [key: string]: (
@@ -14,13 +18,12 @@ const switchObj: {
 } = {
   post: (app: Express, path: string, obj: any, handler: Function) => {
     app.post(path, (req: Request, res: Response) => {
-      console.log("req.body", req.body);
       Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
+      Reflect.defineMetadata(headersDataMetadataKey, req.headers, handler);
 
       const bindFunc = handler.bind(obj);
 
       const result = bindFunc();
-      console.log("result: ", result);
       if (result) {
         res.json(result);
       } else {
@@ -30,8 +33,11 @@ const switchObj: {
   },
   get: (app: Express, path: string, obj: any, handler: Function) => {
     app.get(path, (req: Request, res: Response) => {
-      const result = handler();
-      console.log("result: ", result);
+      Reflect.defineMetadata(headersDataMetadataKey, req.headers, handler);
+
+      const bindFunc = handler.bind(obj);
+
+      const result = bindFunc();
       if (result) {
         res.json(result);
       } else {
@@ -42,7 +48,13 @@ const switchObj: {
 };
 
 export function useExpressServer(app: Express, config: ControllerBaseConfig) {
-  const controllers = config.controllers.filter((c) => {
+  if (config.cors) {
+    if (config.cors === true) {
+      app.use(cors());
+    }
+  }
+
+  const controllers = (config.controllers || []).filter((c) => {
     const keys = Reflect.getOwnMetadataKeys(c);
     if (!keys.includes(controllerMetadataKey)) {
       return false;

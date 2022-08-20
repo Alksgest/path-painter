@@ -1,17 +1,33 @@
-export const bodyMetadataKey = Symbol("Body");
-export const bodyDataMetadataKey = Symbol("BodyData");
+export const requestMetadataKey = Symbol("request");
+export const bodyMetadataKey = Symbol("body");
+export const headerMetadataKey = Symbol("header");
 
 export function FromBody(
   target: Object,
   propertyKey: string | symbol,
   parameterIndex: number
 ) {
-  let existingRequiredParameters: number[] =
+  let existingParams: number[] =
     Reflect.getOwnMetadata(bodyMetadataKey, target, propertyKey) || [];
-  existingRequiredParameters.push(parameterIndex);
+
+  existingParams.push(parameterIndex);
+
+  Reflect.defineMetadata(bodyMetadataKey, existingParams, target, propertyKey);
+}
+
+export function FromHeader(
+  target: Object,
+  propertyKey: string | symbol,
+  parameterIndex: number
+) {
+  let existingParams: number[] =
+    Reflect.getOwnMetadata(headerMetadataKey, target, propertyKey) || [];
+
+  existingParams.push(parameterIndex);
+
   Reflect.defineMetadata(
-    bodyMetadataKey,
-    existingRequiredParameters,
+    headerMetadataKey,
+    existingParams,
     target,
     propertyKey
   );
