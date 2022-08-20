@@ -41,7 +41,6 @@ export function Get(path: string = ""): MethodDecorator {
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor
   ) {
-    console.log("added get metadata");
     commonMethodImpl(target, propertyKey, descriptor, path, getMetadataKey);
   };
 }

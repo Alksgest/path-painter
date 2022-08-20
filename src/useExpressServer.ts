@@ -8,26 +8,10 @@ import {
   controllerMetadataKey,
   queryDataMetadataKey,
   paramDataMetadataKey,
+  emptySymbol,
 } from "./types/symbols";
-import { getRestKeys } from "./util";
-
-const registerMiddlewares = (
-  app: Express,
-  controller: Function,
-  functionName: string
-) => {
-  console.log("functionName: ", functionName);
-  console.log("controller: ", controller);
-
-  const controllerKeys = Reflect.getMetadataKeys(controller);
-  console.log("controllerKeys: ", controllerKeys);
-
-  const func = controller.prototype[functionName];
-  console.log("func: ", func);
-
-  const funcKeys = Reflect.getMetadataKeys(func);
-  console.log("funcKeys: ", funcKeys);
-};
+import { getRestKey, getUseAfterKey, getUseBeforeKey } from "./util";
+import { ExpressMiddlewareInterface } from "./types/web";
 
 const registerMethodSwitchObj: {
   [key: string]: (
@@ -43,7 +27,7 @@ const registerMethodSwitchObj: {
     controller: Function,
     functionName: string
   ) => {
-    app.post(path, (req: Request, res: Response) => {
+    app.post(path, (req: Request, res: Response, next: any) => {
       // TODO: entry point for DI
       const obj = new (controller as any)();
       const handler: Function = obj[functionName];
@@ -59,7 +43,11 @@ const registerMethodSwitchObj: {
       if (result) {
         res.json(result);
       } else {
-        return res.send();
+        res.send();
+      }
+
+      if (next) {
+        next();
       }
     });
   },
@@ -69,7 +57,7 @@ const registerMethodSwitchObj: {
     controller: Function,
     functionName: string
   ) => {
-    app.get(path, (req: Request, res: Response) => {
+    app.get(path, (req: Request, res: Response, next: any) => {
       // TODO: entry point for DI
       const obj = new (controller as any)();
       const handler: Function = obj[functionName];
@@ -84,7 +72,11 @@ const registerMethodSwitchObj: {
       if (result) {
         res.json(result);
       } else {
-        return res.send();
+        res.send();
+      }
+
+      if (next) {
+        next();
       }
     });
   },
@@ -115,25 +107,72 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
       const func: Function = controller.prototype[funcName];
       const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
 
-      const basePath = Reflect.getOwnMetadata(
+      const basePath: string = Reflect.getOwnMetadata(
         controllerMetadataKey,
         controller
       );
 
-      const filteredKeys = getRestKeys(funcMetadataKeys);
+      const restKey = getRestKey(funcMetadataKeys);
+      const useBeforeKey = getUseBeforeKey(funcMetadataKeys);
+      const useAfterKey = getUseAfterKey(funcMetadataKeys);
 
-      for (const key of filteredKeys) {
-        const stringKey = key.description!;
 
-        const methodPath = Reflect.getOwnMetadata(key, func);
+      if (restKey == emptySymbol) {
+        continue;
+      }
 
-        const combinedPath = `${basePath}${methodPath}`;
+      const methodPath = Reflect.getOwnMetadata(restKey, func);
 
-        const registerEndpointMethod = registerMethodSwitchObj[stringKey];
+      const combinedPath = `${basePath}${methodPath}`;
 
-        registerEndpointMethod(app, combinedPath, controller, funcName);
-        registerMiddlewares(app, controller, funcName);
+      if (useBeforeKey != emptySymbol) {
+        registerMiddlewares(useBeforeKey, func, combinedPath, app);
+      }
+
+      registerEndpoints(restKey, combinedPath, app, controller, funcName);
+
+      if (useAfterKey != emptySymbol) {
+        registerMiddlewares(useAfterKey, func, combinedPath, app);
       }
     }
   });
+}
+
+const registerMiddlewares = (
+  middlewareKey: symbol,
+  func: Function,
+  combinedPath: string,
+  app: Express
+) => {
+  const middlewaresClasses: Function[] = Reflect.getMetadata(
+    middlewareKey,
+    func
+  );
+
+  for (const middleware of middlewaresClasses) {
+    // TODO: get from DI
+    const obj: ExpressMiddlewareInterface = new (middleware as any)();
+    const handler = obj.use;
+
+    app.use(
+      combinedPath,
+      (request: Request, response: Response, next: (err?: any) => any) => {
+        return handler(request, response, next);
+      }
+    );
+  }
+};
+
+function registerEndpoints(
+  restKey: symbol,
+  combinedPath: string,
+  app: Express,
+  controller: Function,
+  funcName: string
+) {
+  const stringKey = restKey.description!;
+
+  const registerEndpointMethod = registerMethodSwitchObj[stringKey];
+
+  registerEndpointMethod(app, combinedPath, controller, funcName);
 }

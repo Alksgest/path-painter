@@ -1,30 +1,22 @@
 import "reflect-metadata";
-import {
-  getMetadataKey,
-  restMethodSwitchObj,
-  useBeforeMetadataKey,
-} from "../types/symbols";
+import { useBeforeMetadataKey, useAfterMetadataKey } from "../types/symbols";
 
-export function UseBefore(): MethodDecorator {
+export function UseBefore(...middlewares: Function[]): MethodDecorator {
   return function (
-    target: Object,
-    propertyKey: string | symbol,
+    _target: Object,
+    _propertyKey: string | symbol,
     descriptor: PropertyDescriptor
   ) {
-    // const ctor = target.constructor;
-    // console.log("ctor: ", ctor);
+    Reflect.defineMetadata(useBeforeMetadataKey, middlewares, descriptor.value);
+  };
+}
 
-    // const ctorKeys = Reflect.getMetadataKeys(ctor.prototype);
-    // console.log("ctorKeys: ", ctorKeys);
-
-    // const funcKeys: symbol[] = Reflect.getMetadataKeys(descriptor.value);
-    // const restMethodKey = funcKeys[0].description || "";
-
-    // const methodPath = Reflect.getMetadata(
-    //   restMethodSwitchObj[restMethodKey],
-    //   descriptor.value
-    // );
-
-    Reflect.defineMetadata(useBeforeMetadataKey, "", descriptor.value);
+export function UseAfter(...middlewares: Function[]): MethodDecorator {
+  return function (
+    _target: Object,
+    _propertyKey: string | symbol,
+    descriptor: PropertyDescriptor
+  ) {
+    Reflect.defineMetadata(useAfterMetadataKey, middlewares, descriptor.value);
   };
 }

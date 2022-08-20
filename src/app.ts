@@ -1,5 +1,5 @@
 import bodyParser from "body-parser";
-import express, { Express } from "express";
+import express, { Express, Request, Response } from "express";
 import { useExpressServer } from "./useExpressServer";
 import {
   Controller,
@@ -10,7 +10,21 @@ import {
   FromQuery,
   _FromParam,
   UseBefore,
+  UseAfter,
 } from "./decorators";
+import { ExpressMiddlewareInterface } from "./types/web";
+import { ParamsDictionary } from "express-serve-static-core";
+import { ParsedQs } from "qs";
+
+class TestMiddleware implements ExpressMiddlewareInterface {
+  use(request: Request, response: Response, next: (err?: any) => any) {
+    console.log("Hello from middleware!");
+
+    if (next) {
+      next();
+    }
+  }
+}
 
 @Controller()
 export class TestController {
@@ -31,9 +45,11 @@ export class TestController {
   //   return "TEST GET";
   // }
 
-  @UseBefore()
+  @UseAfter(TestMiddleware)
+  @UseBefore(TestMiddleware)
   @Get("byId/:id")
   testGetWithParam(@_FromParam("id") id: string) {
+    console.log("controller method invoke!");
     return id;
   }
 }
@@ -54,6 +70,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 useExpressServer(app, config);
-// app.listen(8000, () => {
-//   console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
-// });
+
+app.listen(8000, () => {
+  console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
+});

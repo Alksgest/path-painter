@@ -18,6 +18,9 @@ export const paramNameMetadataKey = Symbol("paramName");
 export const controllerMetadataKey = Symbol("controller");
 
 export const useBeforeMetadataKey = Symbol("useBefore");
+export const useAfterMetadataKey = Symbol("useAfter");
+
+export const emptySymbol = Symbol();
 
 export const restMethodSwitchObj: { [key: string]: symbol } = {
   get: getMetadataKey,
@@ -28,4 +31,5 @@ export const restMethodSwitchObj: { [key: string]: symbol } = {
 
 export const middlewareSwitchObj: { [key: string]: symbol } = {
   useBefore: useBeforeMetadataKey,
+  useAfter: useAfterMetadataKey,
 };
