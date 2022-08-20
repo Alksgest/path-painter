@@ -1,3 +1,4 @@
-export * from "./class-decorators";
-export * from "./method-decorators";
+export * from "./controller-decorators";
+export * from "./middleware-decorators";
 export * from "./parameter-decorators";
+export * from "./rest-decorators";

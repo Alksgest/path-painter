@@ -1,6 +1,6 @@
+import "reflect-metadata";
 import cors from "cors";
 import { Express, Request, Response } from "express";
-import "reflect-metadata";
 import { ControllerBaseConfig } from "./types/settings";
 import {
   bodyDataMetadataKey,
@@ -9,12 +9,31 @@ import {
   queryDataMetadataKey,
   paramDataMetadataKey,
 } from "./types/symbols";
+import { getRestKeys } from "./util";
 
-const switchObj: {
+const registerMiddlewares = (
+  app: Express,
+  controller: Function,
+  functionName: string
+) => {
+  console.log("functionName: ", functionName);
+  console.log("controller: ", controller);
+
+  const controllerKeys = Reflect.getMetadataKeys(controller);
+  console.log("controllerKeys: ", controllerKeys);
+
+  const func = controller.prototype[functionName];
+  console.log("func: ", func);
+
+  const funcKeys = Reflect.getMetadataKeys(func);
+  console.log("funcKeys: ", funcKeys);
+};
+
+const registerMethodSwitchObj: {
   [key: string]: (
     app: Express,
     path: string,
-    obj: Function,
+    controller: Function,
     functionName: string
   ) => void;
 } = {
@@ -94,23 +113,26 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
 
     for (const funcName of functions) {
       const func: Function = controller.prototype[funcName];
-      const funcMetadataKeys: Symbol[] = Reflect.getOwnMetadataKeys(func);
+      const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
 
       const basePath = Reflect.getOwnMetadata(
         controllerMetadataKey,
         controller
       );
 
-      for (const key of funcMetadataKeys) {
-        const k = key.description!;
+      const filteredKeys = getRestKeys(funcMetadataKeys);
+
+      for (const key of filteredKeys) {
+        const stringKey = key.description!;
 
         const methodPath = Reflect.getOwnMetadata(key, func);
 
         const combinedPath = `${basePath}${methodPath}`;
 
-        const registerEndpointMethod = switchObj[k];
+        const registerEndpointMethod = registerMethodSwitchObj[stringKey];
 
         registerEndpointMethod(app, combinedPath, controller, funcName);
+        registerMiddlewares(app, controller, funcName);
       }
     }
   });

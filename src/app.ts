@@ -8,28 +8,30 @@ import {
   Get,
   FromHeader,
   FromQuery,
-  FromParam,
   _FromParam,
+  UseBefore,
 } from "./decorators";
 
 @Controller()
 export class TestController {
-  @Post()
-  testPost(
-    @FromQuery param1: string,
-    @FromHeader field: string,
-    @FromBody anotherField: string
-  ) {
-    console.log("param1: ", param1);
-    console.log("field: ", field);
-    console.log("anotherField: ", anotherField);
-    return field;
-  }
-  @Get()
-  testGet() {
-    console.log("test get");
-    return "TEST GET";
-  }
+  // @Post()
+  // testPost(
+  //   @FromQuery param1: string,
+  //   @FromHeader field: string,
+  //   @FromBody anotherField: string
+  // ) {
+  //   console.log("param1: ", param1);
+  //   console.log("field: ", field);
+  //   console.log("anotherField: ", anotherField);
+  //   return field;
+  // }
+  // @Get()
+  // testGet() {
+  //   console.log("test get");
+  //   return "TEST GET";
+  // }
+
+  @UseBefore()
   @Get("byId/:id")
   testGetWithParam(@_FromParam("id") id: string) {
     return id;
@@ -52,6 +54,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 useExpressServer(app, config);
-app.listen(8000, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
-});
+// app.listen(8000, () => {
+//   console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
+// });

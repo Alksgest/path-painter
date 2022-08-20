@@ -1,4 +1,3 @@
-import { paramDataMetadataKey, paramNameMetadataKey } from "./../types/symbols";
 import {
   postMetadataKey,
   getMetadataKey,
@@ -9,6 +8,10 @@ import {
   queryMetadataKey,
   queryDataMetadataKey,
   paramMetadataKey,
+  deleteMetadataKey,
+  paramDataMetadataKey,
+  paramNameMetadataKey,
+  putMetadataKey,
 } from "../types/symbols";
 import { getFunctionArgumentsList } from "../util";
 
@@ -27,7 +30,9 @@ export function Put(path: string = ""): MethodDecorator {
     target: Object,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor
-  ) {};
+  ) {
+    commonMethodImpl(target, propertyKey, descriptor, path, putMetadataKey);
+  };
 }
 
 export function Get(path: string = ""): MethodDecorator {
@@ -36,6 +41,7 @@ export function Get(path: string = ""): MethodDecorator {
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor
   ) {
+    console.log("added get metadata");
     commonMethodImpl(target, propertyKey, descriptor, path, getMetadataKey);
   };
 }
@@ -45,7 +51,9 @@ export function Delete(path: string = ""): MethodDecorator {
     target: Object,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor
-  ) {};
+  ) {
+    commonMethodImpl(target, propertyKey, descriptor, path, deleteMetadataKey);
+  };
 }
 
 function commonMethodImpl(
@@ -98,8 +106,6 @@ function applyParamsMetadata(
     target,
     propertyKey
   );
-
-  console.log("functionArgumentIndexes: ", functionArgumentIndexes);
 
   if (functionArgumentIndexes) {
     descriptor.value = function (...args: any[]) {

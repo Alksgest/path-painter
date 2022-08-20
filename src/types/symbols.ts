@@ -3,8 +3,10 @@ export const headerDataMetadataKey = Symbol("headersData");
 export const queryDataMetadataKey = Symbol("queryData");
 export const paramDataMetadataKey = Symbol("paramData");
 
-export const postMetadataKey = Symbol("post");
 export const getMetadataKey = Symbol("get");
+export const postMetadataKey = Symbol("post");
+export const putMetadataKey = Symbol("put");
+export const deleteMetadataKey = Symbol("delete");
 
 export const requestMetadataKey = Symbol("request");
 export const bodyMetadataKey = Symbol("body");
@@ -14,3 +16,16 @@ export const paramMetadataKey = Symbol("param");
 export const paramNameMetadataKey = Symbol("paramName");
 
 export const controllerMetadataKey = Symbol("controller");
+
+export const useBeforeMetadataKey = Symbol("useBefore");
+
+export const restMethodSwitchObj: { [key: string]: symbol } = {
+  get: getMetadataKey,
+  post: postMetadataKey,
+  put: putMetadataKey,
+  delete: deleteMetadataKey,
+};
+
+export const middlewareSwitchObj: { [key: string]: symbol } = {
+  useBefore: useBeforeMetadataKey,
+};
