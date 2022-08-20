@@ -1,12 +1,16 @@
+import { paramDataMetadataKey, paramNameMetadataKey } from "./../types/symbols";
+import {
+  postMetadataKey,
+  getMetadataKey,
+  bodyMetadataKey,
+  bodyDataMetadataKey,
+  headerMetadataKey,
+  headerDataMetadataKey,
+  queryMetadataKey,
+  queryDataMetadataKey,
+  paramMetadataKey,
+} from "../types/symbols";
 import { getFunctionArgumentsList } from "../util";
-import { bodyMetadataKey, headerMetadataKey } from "./parameter-decorators";
-
-export const bodyDataMetadataKey = Symbol("bodyData");
-export const headerDataMetadataKey = Symbol("headersData");
-export const queryDataMetadataKey = Symbol("queryData");
-
-export const postMetadataKey = Symbol("post");
-export const getMetadataKey = Symbol("get");
 
 export function Post(path: string = ""): MethodDecorator {
   return function (
@@ -53,9 +57,6 @@ function commonMethodImpl(
 ) {
   const funcArguments = getFunctionArgumentsList(descriptor.value);
 
-  // applyBodyParams(target, propertyKey, descriptor, funcArguments);
-  // applyHeadersParams(target, propertyKey, descriptor, funcArguments);
-
   applyMetadata(
     target,
     propertyKey,
@@ -72,8 +73,61 @@ function commonMethodImpl(
     headerMetadataKey,
     headerDataMetadataKey
   );
+  applyMetadata(
+    target,
+    propertyKey,
+    descriptor,
+    funcArguments,
+    queryMetadataKey,
+    queryDataMetadataKey
+  );
+
+  applyParamsMetadata(target, propertyKey, descriptor);
 
   Reflect.defineMetadata(method, path, descriptor.value);
+}
+
+function applyParamsMetadata(
+  target: Object,
+  propertyKey: string | symbol,
+  descriptor: PropertyDescriptor
+): Function {
+  let oldFunc: Function = descriptor.value;
+  let functionArgumentIndexes = Reflect.getOwnMetadata(
+    paramMetadataKey,
+    target,
+    propertyKey
+  );
+
+  console.log("functionArgumentIndexes: ", functionArgumentIndexes);
+
+  if (functionArgumentIndexes) {
+    descriptor.value = function (...args: any[]) {
+      const params = Reflect.getOwnMetadata(
+        paramDataMetadataKey,
+        descriptor.value
+      );
+
+      const name = Reflect.getOwnMetadata(
+        paramNameMetadataKey,
+        target,
+        propertyKey
+      );
+
+      for (const index of functionArgumentIndexes) {
+        Object.keys(params).forEach((key) => {
+          if (name !== key) {
+            return;
+          }
+          args[index] = params[key];
+        });
+      }
+
+      return oldFunc.apply(this, args);
+    };
+  }
+
+  return descriptor.value;
 }
 
 function applyMetadata(
@@ -85,22 +139,26 @@ function applyMetadata(
   metadataValueKey: symbol
 ): Function {
   let oldFunc: Function = descriptor.value;
-  let bodyParams = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
+  let functionArgumentIndexes = Reflect.getOwnMetadata(
+    metadataKey,
+    target,
+    propertyKey
+  );
 
-  if (bodyParams) {
+  if (functionArgumentIndexes) {
     descriptor.value = function (...args: any[]) {
       const headers = Reflect.getOwnMetadata(
         metadataValueKey,
         descriptor.value
       );
 
-      for (const paramIndex of bodyParams) {
-        const propName = funcArguments[paramIndex];
+      for (const index of functionArgumentIndexes) {
+        const propName = funcArguments[index];
         Object.keys(headers).forEach((key) => {
           if (propName !== key) {
             return;
           }
-          args[paramIndex] = headers[key];
+          args[index] = headers[key];
         });
       }
 

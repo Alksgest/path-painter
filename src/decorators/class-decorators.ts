@@ -1,6 +1,5 @@
 import "reflect-metadata";
-
-export const controllerMetadataKey = Symbol("Controller");
+import { controllerMetadataKey } from "../types/symbols";
 
 export function Controller(basePath: string = "/"): ClassDecorator {
   return function <TFunction extends Function>(target: TFunction) {

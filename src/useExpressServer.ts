@@ -1,12 +1,14 @@
 import cors from "cors";
 import { Express, Request, Response } from "express";
 import "reflect-metadata";
+import { ControllerBaseConfig } from "./types/settings";
 import {
-  controllerMetadataKey,
   bodyDataMetadataKey,
   headerDataMetadataKey,
-} from "./decorators";
-import { ControllerBaseConfig } from "./types/settings";
+  controllerMetadataKey,
+  queryDataMetadataKey,
+  paramDataMetadataKey,
+} from "./types/symbols";
 
 const switchObj: {
   [key: string]: (
@@ -20,8 +22,8 @@ const switchObj: {
     app.post(path, (req: Request, res: Response) => {
       Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
       Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
-
-      console.log("req.query: ", req.query);
+      Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
+      Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
 
       const bindFunc = handler.bind(obj);
 
@@ -36,6 +38,8 @@ const switchObj: {
   get: (app: Express, path: string, obj: any, handler: Function) => {
     app.get(path, (req: Request, res: Response) => {
       Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
+      Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
+      Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
 
       const bindFunc = handler.bind(obj);
 
@@ -58,11 +62,7 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
 
   const controllers = (config.controllers || []).filter((c) => {
     const keys = Reflect.getOwnMetadataKeys(c);
-    if (!keys.includes(controllerMetadataKey)) {
-      return false;
-    }
-
-    return true;
+    return keys.includes(controllerMetadataKey);
   });
 
   controllers.forEach((controller) => {
@@ -73,21 +73,24 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
     if (!functions?.length) {
       return;
     }
+
     for (const funcName of functions) {
       const func: Function = controller.prototype[funcName];
-      const keys: Symbol[] = Reflect.getOwnMetadataKeys(func);
+      const funcMetadataKeys: Symbol[] = Reflect.getOwnMetadataKeys(func);
 
       const basePath = Reflect.getOwnMetadata(
         controllerMetadataKey,
         controller
       );
 
-      for (const key of keys) {
+      for (const key of funcMetadataKeys) {
         const k = key.description!;
 
         const methodPath = Reflect.getOwnMetadata(key, func);
 
         const combinedPath = `${basePath}${methodPath}`;
+
+        console.log("combinedPath: ", combinedPath);
 
         const registerEndpointMethod = switchObj[k];
 
@@ -95,94 +98,8 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
 
         const objFunc: Function = obj[funcName];
 
-        // Reflect.defineMetadata(bodyDataMetadataKey, dummyBody, objFunc);
-
-        // const bindFunc = objFunc.bind(obj);
-
-        registerEndpointMethod(app, combinedPath.trim(), obj, objFunc);
+        registerEndpointMethod(app, combinedPath, obj, objFunc);
       }
     }
   });
 }
-
-// const callClass = new CallClass(config);
-// callClass.testCallEndpoint({ method: "Post", url: "/sus/path" });
-
-// export class CallClass {
-//   constructor(private config: ControllerBaseConfig) {}
-
-//   testCallEndpoint(req: Partial<Request>) {
-//     const controllers = this.config.controllers;
-
-//     const method = req.method;
-//     const path = req.url;
-
-//     let ctor: Function | undefined = undefined;
-//     let methodToCall: Function | undefined = undefined;
-//     let methodSymbol: Symbol | undefined = undefined;
-
-//     controllers.forEach((controller) => {
-//       const keys = Reflect.getOwnMetadataKeys(controller);
-//       if (!keys.includes(controllerMetadataKey)) {
-//         return;
-//       }
-
-//       const functions = Object.getOwnPropertyNames(controller.prototype).filter(
-//         (f) => f != "constructor"
-//       );
-
-//       if (!functions?.length) {
-//         return;
-//       }
-
-//       for (const funcName of functions) {
-//         const func: Function = controller.prototype[funcName];
-
-//         const keys = Reflect.getOwnMetadataKeys(func);
-
-//         const hasMethod = keys
-//           .map((el: Symbol) => el.description)
-//           .includes(method);
-
-//         if (!hasMethod) {
-//           return;
-//         }
-
-//         const key = keys.find((el: Symbol) => el.description === method);
-
-//         const basePath = Reflect.getOwnMetadata(
-//           controllerMetadataKey,
-//           controller
-//         );
-//         const methodPath = Reflect.getOwnMetadata(key, func);
-
-//         const combinedPath = `${basePath}${methodPath}`;
-
-//         if (path === combinedPath) {
-//           // success
-//           ctor = controller;
-//           methodToCall = func;
-//           methodSymbol = key;
-//         }
-//       }
-//     });
-
-//     if (!ctor) {
-//       return;
-//     }
-
-//     if (!methodToCall) {
-//       return;
-//     }
-
-//     const Constructor = ctor as Function;
-
-//     const obj = (Constructor.constructor as any)();
-
-//     const ff = methodToCall as Function;
-
-//     Reflect.defineMetadata(bodyDataMetadataKey, dummyBody, ff);
-
-//     ff.apply(obj);
-//   }
-// }
