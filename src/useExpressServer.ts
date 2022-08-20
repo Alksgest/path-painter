@@ -14,12 +14,21 @@ const switchObj: {
   [key: string]: (
     app: Express,
     path: string,
-    obj: any,
-    handler: Function
+    obj: Function,
+    functionName: string
   ) => void;
 } = {
-  post: (app: Express, path: string, obj: any, handler: Function) => {
+  post: (
+    app: Express,
+    path: string,
+    controller: Function,
+    functionName: string
+  ) => {
     app.post(path, (req: Request, res: Response) => {
+      // TODO: entry point for DI
+      const obj = new (controller as any)();
+      const handler: Function = obj[functionName];
+
       Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
       Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
       Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
@@ -35,8 +44,17 @@ const switchObj: {
       }
     });
   },
-  get: (app: Express, path: string, obj: any, handler: Function) => {
+  get: (
+    app: Express,
+    path: string,
+    controller: Function,
+    functionName: string
+  ) => {
     app.get(path, (req: Request, res: Response) => {
+      // TODO: entry point for DI
+      const obj = new (controller as any)();
+      const handler: Function = obj[functionName];
+
       Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
       Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
       Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
@@ -90,15 +108,9 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
 
         const combinedPath = `${basePath}${methodPath}`;
 
-        console.log("combinedPath: ", combinedPath);
-
         const registerEndpointMethod = switchObj[k];
 
-        const obj = new (controller as any)();
-
-        const objFunc: Function = obj[funcName];
-
-        registerEndpointMethod(app, combinedPath, obj, objFunc);
+        registerEndpointMethod(app, combinedPath, controller, funcName);
       }
     }
   });
