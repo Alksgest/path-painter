@@ -1,12 +1,12 @@
 import bodyParser from "body-parser";
 import express, { Express } from "express";
 import { useExpressServer } from "./useExpressServer";
-import { Controller, Post, FromBody, Get } from "./decorators";
+import { Controller, Post, FromBody, Get, FromHeader } from "./decorators";
 
 @Controller()
 export class TestController {
   @Post()
-  testPost(field: string, @FromBody anotherField: string) {
+  testPost(@FromHeader field: string, @FromBody anotherField: string) {
     console.log("field: ", field);
     console.log("anotherField: ", anotherField);
     return field;

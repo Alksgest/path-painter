@@ -4,7 +4,7 @@ import "reflect-metadata";
 import {
   controllerMetadataKey,
   bodyDataMetadataKey,
-  headersDataMetadataKey,
+  headerDataMetadataKey,
 } from "./decorators";
 import { ControllerBaseConfig } from "./types/settings";
 
@@ -19,7 +19,9 @@ const switchObj: {
   post: (app: Express, path: string, obj: any, handler: Function) => {
     app.post(path, (req: Request, res: Response) => {
       Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
-      Reflect.defineMetadata(headersDataMetadataKey, req.headers, handler);
+      Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
+
+      console.log("req.query: ", req.query);
 
       const bindFunc = handler.bind(obj);
 
@@ -33,7 +35,7 @@ const switchObj: {
   },
   get: (app: Express, path: string, obj: any, handler: Function) => {
     app.get(path, (req: Request, res: Response) => {
-      Reflect.defineMetadata(headersDataMetadataKey, req.headers, handler);
+      Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
 
       const bindFunc = handler.bind(obj);
 
