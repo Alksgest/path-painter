@@ -84,73 +84,92 @@ const registerMethodSwitchObj: {
 };
 
 export function useExpressServer(app: Express, config: ControllerBaseConfig) {
+  setupCors(config, app);
+
+  const controllers = config.controllers || [];
+
+  controllers.forEach((controller) => registerController(controller, app));
+}
+
+function setupCors(config: ControllerBaseConfig, app: Express) {
   // TODO: add another settings for cors
   if (config.cors) {
     if (config.cors === true) {
       app.use(cors());
     }
   }
+}
 
-  (config.controllers || []).forEach((controller) => {
-    const controllerKeys = Reflect.getOwnMetadataKeys(controller);
+function registerController(controller: Function, app: Express) {
+  const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
-    // wrong class registered as controller
-    if (!controllerKeys.includes(controllerMetadataKey)) {
-      return;
-    }
+  // wrong class registered as controller
+  if (!controllerKeys.includes(controllerMetadataKey)) {
+    return;
+  }
 
-    const functions = Object.getOwnPropertyNames(controller.prototype).filter(
-      (f) => f != "constructor"
-    );
+  const functions = Object.getOwnPropertyNames(controller.prototype).filter(
+    (f) => f != "constructor"
+  );
 
-    if (!functions?.length) {
-      return;
-    }
+  if (!functions?.length) {
+    return;
+  }
 
-    const basePath: string = Reflect.getOwnMetadata(
-      controllerMetadataKey,
-      controller
-    );
+  const basePath: string = Reflect.getOwnMetadata(
+    controllerMetadataKey,
+    controller
+  );
 
-    const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
+  const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
 
-    if (useBeforeControllerKey !== emptySymbol) {
-      registerMiddlewares(useBeforeControllerKey, controller, basePath, app);
-    }
+  if (useBeforeControllerKey !== emptySymbol) {
+    registerMiddlewares(useBeforeControllerKey, controller, basePath, app);
+  }
 
-    for (const funcName of functions) {
-      const func: Function = controller.prototype[funcName];
-      const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
+  for (const funcName of functions) {
+    registerEndpointWithMiddlewares(controller, funcName, basePath, app);
+  }
 
-      const restKey = getRestKey(funcMetadataKeys);
-      const useBeforeKey = getUseBeforeKey(funcMetadataKeys);
-      const useAfterKey = getUseAfterKey(funcMetadataKeys);
+  const useAfterControllerKey = getUseAfterKey(controllerKeys);
 
-      if (restKey == emptySymbol) {
-        continue;
-      }
+  if (useAfterControllerKey !== emptySymbol) {
+    registerMiddlewares(useAfterControllerKey, controller, basePath, app);
+  }
+}
 
-      const methodPath = Reflect.getOwnMetadata(restKey, func);
+function registerEndpointWithMiddlewares(
+  controller: Function,
+  funcName: string,
+  controllerPath: string,
+  app: Express
+): boolean {
+  const func: Function = controller.prototype[funcName];
+  const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
 
-      const combinedPath = `${basePath}${methodPath}`;
+  const restKey = getRestKey(funcMetadataKeys);
+  const useBeforeKey = getUseBeforeKey(funcMetadataKeys);
+  const useAfterKey = getUseAfterKey(funcMetadataKeys);
 
-      if (useBeforeKey != emptySymbol) {
-        registerMiddlewares(useBeforeKey, func, combinedPath, app);
-      }
+  if (restKey == emptySymbol) {
+    return false;
+  }
 
-      registerEndpoints(restKey, combinedPath, app, controller, funcName);
+  const methodPath = Reflect.getOwnMetadata(restKey, func);
 
-      if (useAfterKey != emptySymbol) {
-        registerMiddlewares(useAfterKey, func, combinedPath, app);
-      }
-    }
+  const combinedPath = `${controllerPath}${methodPath}`;
 
-    const useAfterControllerKey = getUseAfterKey(controllerKeys);
+  if (useBeforeKey != emptySymbol) {
+    registerMiddlewares(useBeforeKey, func, combinedPath, app);
+  }
 
-    if (useAfterControllerKey !== emptySymbol) {
-      registerMiddlewares(useAfterControllerKey, controller, basePath, app);
-    }
-  });
+  registerEndpoints(restKey, combinedPath, app, controller, funcName);
+
+  if (useAfterKey != emptySymbol) {
+    registerMiddlewares(useAfterKey, func, combinedPath, app);
+  }
+
+  return true;
 }
 
 const registerMiddlewares = (
