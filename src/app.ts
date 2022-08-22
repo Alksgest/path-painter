@@ -1,6 +1,6 @@
 import bodyParser from "body-parser";
 import express, { Express, Request, Response } from "express";
-import { useExpressServer } from "./useExpressServer";
+import { useExpressServer } from "./core";
 import {
   Controller,
   Post,

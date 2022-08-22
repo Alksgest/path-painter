@@ -1,87 +1,11 @@
 import "reflect-metadata";
 import cors from "cors";
 import { Express, Request, Response } from "express";
-import { ControllerBaseConfig } from "./types/settings";
-import {
-  bodyDataMetadataKey,
-  headerDataMetadataKey,
-  controllerMetadataKey,
-  queryDataMetadataKey,
-  paramDataMetadataKey,
-  emptySymbol,
-} from "./types/symbols";
-import { getRestKey, getUseAfterKey, getUseBeforeKey } from "./util";
-import { IExpressMiddleware } from "./types/web";
-
-// TODO: handle other REST methods
-const registerMethodSwitchObj: {
-  [key: string]: (
-    app: Express,
-    path: string,
-    controller: Function,
-    functionName: string
-  ) => void;
-} = {
-  post: (
-    app: Express,
-    path: string,
-    controller: Function,
-    functionName: string
-  ) => {
-    app.post(path, async (req: Request, res: Response, next: any) => {
-      // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
-
-      Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
-      Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
-      Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
-      Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
-
-      const bindFunc = handler.bind(obj);
-
-      const result = await Promise.resolve(bindFunc());
-      if (result) {
-        res.json(result);
-      } else {
-        res.send();
-      }
-
-      if (next) {
-        next();
-      }
-    });
-  },
-  get: (
-    app: Express,
-    path: string,
-    controller: Function,
-    functionName: string
-  ) => {
-    app.get(path, async (req: Request, res: Response, next: any) => {
-      // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
-
-      Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
-      Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
-      Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
-
-      const bindFunc = handler.bind(obj);
-
-      const result = await Promise.resolve(bindFunc());
-      if (result) {
-        res.json(result);
-      } else {
-        res.send();
-      }
-
-      if (next) {
-        next();
-      }
-    });
-  },
-};
+import { ControllerBaseConfig } from "../types/settings";
+import { controllerMetadataKey, emptySymbol } from "../types/symbols";
+import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
+import { IExpressMiddleware } from "../types/web";
+import { restHandlers } from "./restHandlers";
 
 export function useExpressServer(app: Express, config: ControllerBaseConfig) {
   setupCors(config, app);
@@ -163,7 +87,7 @@ function registerEndpointWithMiddlewares(
     registerMiddlewares(useBeforeKey, func, combinedPath, app);
   }
 
-  registerEndpoints(restKey, combinedPath, app, controller, funcName);
+  registerEndpoint(restKey, combinedPath, app, controller, funcName);
 
   if (useAfterKey != emptySymbol) {
     registerMiddlewares(useAfterKey, func, combinedPath, app);
@@ -201,7 +125,7 @@ const registerMiddlewares = (
   }
 };
 
-function registerEndpoints(
+function registerEndpoint(
   restKey: symbol,
   combinedPath: string,
   app: Express,
@@ -210,7 +134,7 @@ function registerEndpoints(
 ) {
   const stringKey = restKey.description!;
 
-  const registerEndpointMethod = registerMethodSwitchObj[stringKey];
+  const registerEndpointMethod = restHandlers[stringKey];
 
   registerEndpointMethod(app, combinedPath, controller, funcName);
 }
