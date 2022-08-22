@@ -13,6 +13,7 @@ import {
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "./util";
 import { IExpressMiddleware } from "./types/web";
 
+// TODO: handle other REST methods
 const registerMethodSwitchObj: {
   [key: string]: (
     app: Express,
@@ -27,7 +28,7 @@ const registerMethodSwitchObj: {
     controller: Function,
     functionName: string
   ) => {
-    app.post(path, (req: Request, res: Response, next: any) => {
+    app.post(path, async (req: Request, res: Response, next: any) => {
       // TODO: entry point for DI
       const obj = new (controller as any)();
       const handler: Function = obj[functionName];
@@ -39,7 +40,7 @@ const registerMethodSwitchObj: {
 
       const bindFunc = handler.bind(obj);
 
-      const result = bindFunc();
+      const result = await Promise.resolve(bindFunc());
       if (result) {
         res.json(result);
       } else {
@@ -57,7 +58,7 @@ const registerMethodSwitchObj: {
     controller: Function,
     functionName: string
   ) => {
-    app.get(path, (req: Request, res: Response, next: any) => {
+    app.get(path, async (req: Request, res: Response, next: any) => {
       // TODO: entry point for DI
       const obj = new (controller as any)();
       const handler: Function = obj[functionName];
@@ -68,7 +69,7 @@ const registerMethodSwitchObj: {
 
       const bindFunc = handler.bind(obj);
 
-      const result = bindFunc();
+      const result = await Promise.resolve(bindFunc());
       if (result) {
         res.json(result);
       } else {
@@ -83,18 +84,21 @@ const registerMethodSwitchObj: {
 };
 
 export function useExpressServer(app: Express, config: ControllerBaseConfig) {
+  // TODO: add another settings for cors
   if (config.cors) {
     if (config.cors === true) {
       app.use(cors());
     }
   }
 
-  const controllers = (config.controllers || []).filter((c) => {
-    const keys = Reflect.getOwnMetadataKeys(c);
-    return keys.includes(controllerMetadataKey);
-  });
+  (config.controllers || []).forEach((controller) => {
+    const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
-  controllers.forEach((controller) => {
+    // wrong class registered as controller
+    if (!controllerKeys.includes(controllerMetadataKey)) {
+      return;
+    }
+
     const functions = Object.getOwnPropertyNames(controller.prototype).filter(
       (f) => f != "constructor"
     );
@@ -103,19 +107,24 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
       return;
     }
 
+    const basePath: string = Reflect.getOwnMetadata(
+      controllerMetadataKey,
+      controller
+    );
+
+    const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
+
+    if (useBeforeControllerKey !== emptySymbol) {
+      registerMiddlewares(useBeforeControllerKey, controller, basePath, app);
+    }
+
     for (const funcName of functions) {
       const func: Function = controller.prototype[funcName];
       const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
 
-      const basePath: string = Reflect.getOwnMetadata(
-        controllerMetadataKey,
-        controller
-      );
-
       const restKey = getRestKey(funcMetadataKeys);
       const useBeforeKey = getUseBeforeKey(funcMetadataKeys);
       const useAfterKey = getUseAfterKey(funcMetadataKeys);
-
 
       if (restKey == emptySymbol) {
         continue;
@@ -134,6 +143,12 @@ export function useExpressServer(app: Express, config: ControllerBaseConfig) {
       if (useAfterKey != emptySymbol) {
         registerMiddlewares(useAfterKey, func, combinedPath, app);
       }
+    }
+
+    const useAfterControllerKey = getUseAfterKey(controllerKeys);
+
+    if (useAfterControllerKey !== emptySymbol) {
+      registerMiddlewares(useAfterControllerKey, controller, basePath, app);
     }
   });
 }
@@ -156,8 +171,12 @@ const registerMiddlewares = (
 
     app.use(
       combinedPath,
-      (request: Request, response: Response, next: (err?: any) => any) => {
-        return handler(request, response, next);
+      async (
+        request: Request,
+        response: Response,
+        next: (err?: any) => any
+      ) => {
+        return await Promise.resolve(handler(request, response, next));
       }
     );
   }

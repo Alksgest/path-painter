@@ -1,22 +1,29 @@
 import "reflect-metadata";
 import { useBeforeMetadataKey, useAfterMetadataKey } from "../types/symbols";
 
-export function UseBefore(...middlewares: Function[]): MethodDecorator {
-  return function (
-    _target: Object,
-    _propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
-  ) {
-    Reflect.defineMetadata(useBeforeMetadataKey, middlewares, descriptor.value);
-  };
+export function UseBefore(...middlewares: Function[]): Function {
+  return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
 }
 
-export function UseAfter(...middlewares: Function[]): MethodDecorator {
+export function UseAfter(...middlewares: Function[]): Function {
+  return registerMetadataAndReturnDecorator(middlewares, useAfterMetadataKey);
+}
+
+function registerMetadataAndReturnDecorator(
+  middlewares: Function[],
+  middlewareKey: symbol
+): Function {
   return function (
-    _target: Object,
+    target: Object,
     _propertyKey: string | symbol,
     descriptor: PropertyDescriptor
   ) {
-    Reflect.defineMetadata(useAfterMetadataKey, middlewares, descriptor.value);
+    if (middlewares.length === 0) {
+      return;
+    }
+
+    // if descriptor is not undefined it is mean, that it is a function, not a class
+    const obj = descriptor ? descriptor.value : target;
+    Reflect.defineMetadata(middlewareKey, middlewares, obj);
   };
 }
