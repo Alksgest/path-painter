@@ -20,6 +20,9 @@ export const controllerMetadataKey = Symbol("controller");
 export const useBeforeMetadataKey = Symbol("useBefore");
 export const useAfterMetadataKey = Symbol("useAfter");
 
+export const validationMetadataKey = Symbol("validation");
+export const validationSchemaMetadataKey = Symbol("validationSchema");
+
 export const emptySymbol = Symbol();
 
 export const restMethodSwitchObj: { [key: string]: symbol } = {

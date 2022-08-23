@@ -6,11 +6,12 @@ import {
   Post,
   FromBody,
   Get,
-  FromHeader,
-  FromQuery,
   FromParam,
   UseBefore,
   UseAfter,
+  IsString,
+  IsNumber,
+  Validate,
 } from "./decorators";
 import { IExpressMiddleware } from "./types/web";
 
@@ -34,34 +35,36 @@ class TestControllerMiddleware implements IExpressMiddleware {
   }
 }
 
+class TestModel {
+  @IsString()
+  value1?: string;
+  @IsNumber()
+  value2?: number;
+}
+
 @UseAfter(TestControllerMiddleware)
 @UseBefore(TestControllerMiddleware)
 @Controller("/test")
 export class TestController {
   @Post()
-  testPost(
-    @FromQuery param1: string,
-    @FromHeader field: string,
-    @FromBody anotherField: string
-  ) {
-    console.log("param1: ", param1);
-    console.log("field: ", field);
-    console.log("anotherField: ", anotherField);
-    return field;
-  }
-  @Get()
-  testGet() {
-    console.log("test get");
-    return "TEST GET";
+  testPost(@Validate() @FromBody model: TestModel): TestModel {
+    console.log("model: ", model);
+    return model;
   }
 
-  @UseAfter(TestMiddleware)
-  @UseBefore(TestMiddleware)
-  @Get("/byId/:id")
-  testGetWithParam(@FromParam("id") id: string) {
-    console.log("controller method invoke!");
-    return Promise.resolve(id);
-  }
+  // @Get()
+  // testGet() {
+  //   console.log("test get");
+  //   return "TEST GET";
+  // }
+
+  // @UseAfter(TestMiddleware)
+  // @UseBefore(TestMiddleware)
+  // @Get("/byId/:id")
+  // testGetWithParam(@FromParam("id") id: string) {
+  //   console.log("controller method invoke!");
+  //   return Promise.resolve(id);
+  // }
 }
 
 const config = {
@@ -76,14 +79,11 @@ app.use(bodyParser.json());
 
 useExpressServer(app, config);
 
-// app.use("/test", (req, res, next) => {
-//   console.log("test middleware");
-//   next();
-// });
-
 app.listen(8000, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
 });
 
 //TODO: remove default usage of body parser as middleware
 //TODO: add file receiving
+//TODO: add decorators for types for swagger
+//TODO: add validation decorators such as Min, Max, In, Required etc.

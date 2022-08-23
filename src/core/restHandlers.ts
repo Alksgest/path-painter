@@ -1,3 +1,4 @@
+import { RequestError } from "./../types/errors";
 import { Express, NextFunction, Request, Response } from "express";
 import {
   bodyDataMetadataKey,
@@ -30,19 +31,38 @@ function getFunc(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
       // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
+      try {
+        const obj = new (controller as any)();
+        const handler: Function = obj[functionName];
 
-      addMetadata(req, handler, [
-        headerDataMetadataKey,
-        queryDataMetadataKey,
-        paramDataMetadataKey,
-      ]);
+        addMetadata(req, handler, [
+          headerDataMetadataKey,
+          queryDataMetadataKey,
+          paramDataMetadataKey,
+        ]);
 
-      const bindFunc = handler.bind(obj);
+        const bindFunc = handler.bind(obj);
 
-      const result = await Promise.resolve(bindFunc());
-      handleResult(result, res, next);
+        const result = await Promise.resolve(bindFunc());
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          }
+        }
+      }
     }
   );
 }
@@ -56,21 +76,40 @@ function postFunc(
   app.post(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
-      // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
+      try {
+        // TODO: entry point for DI
+        const obj = new (controller as any)();
+        const handler: Function = obj[functionName];
 
-      addMetadata(req, handler, [
-        bodyDataMetadataKey,
-        headerDataMetadataKey,
-        queryDataMetadataKey,
-        paramDataMetadataKey,
-      ]);
+        addMetadata(req, handler, [
+          bodyDataMetadataKey,
+          headerDataMetadataKey,
+          queryDataMetadataKey,
+          paramDataMetadataKey,
+        ]);
 
-      const bindFunc = handler.bind(obj);
+        const bindFunc = handler.bind(obj);
 
-      const result = await Promise.resolve(bindFunc());
-      handleResult(result, res, next);
+        const result = await Promise.resolve(bindFunc());
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          }
+        }
+      }
     }
   );
 }
@@ -81,24 +120,43 @@ function putFunc(
   controller: Function,
   functionName: string
 ) {
-  app.post(
+  app.put(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
-      // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
+      try {
+        // TODO: entry point for DI
+        const obj = new (controller as any)();
+        const handler: Function = obj[functionName];
 
-      addMetadata(req, handler, [
-        bodyDataMetadataKey,
-        headerDataMetadataKey,
-        queryDataMetadataKey,
-        paramDataMetadataKey,
-      ]);
+        addMetadata(req, handler, [
+          bodyDataMetadataKey,
+          headerDataMetadataKey,
+          queryDataMetadataKey,
+          paramDataMetadataKey,
+        ]);
 
-      const bindFunc = handler.bind(obj);
+        const bindFunc = handler.bind(obj);
 
-      const result = await Promise.resolve(bindFunc());
-      handleResult(result, res, next);
+        const result = await Promise.resolve(bindFunc());
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          }
+        }
+      }
     }
   );
 }
@@ -109,24 +167,43 @@ function deleteFunc(
   controller: Function,
   functionName: string
 ) {
-  app.post(
+  app.delete(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
-      // TODO: entry point for DI
-      const obj = new (controller as any)();
-      const handler: Function = obj[functionName];
+      try {
+        // TODO: entry point for DI
+        const obj = new (controller as any)();
+        const handler: Function = obj[functionName];
 
-      addMetadata(req, handler, [
-        bodyDataMetadataKey,
-        headerDataMetadataKey,
-        queryDataMetadataKey,
-        paramDataMetadataKey,
-      ]);
+        addMetadata(req, handler, [
+          bodyDataMetadataKey,
+          headerDataMetadataKey,
+          queryDataMetadataKey,
+          paramDataMetadataKey,
+        ]);
 
-      const bindFunc = handler.bind(obj);
+        const bindFunc = handler.bind(obj);
 
-      const result = await Promise.resolve(bindFunc());
-      handleResult(result, res, next);
+        const result = await Promise.resolve(bindFunc());
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          }
+        }
+      }
     }
   );
 }
@@ -135,34 +212,34 @@ const keyToDataMap: {
   [key: symbol]: (req: Request, handler: Function) => void;
 } = {
   [bodyDataMetadataKey]: (req: Request, handler: Function) => {
-    Reflect.defineMetadata(bodyDataMetadataKey, req.headers, handler);
+    Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
   },
   [headerDataMetadataKey]: (req: Request, handler: Function) => {
     Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
   },
   [queryDataMetadataKey]: (req: Request, handler: Function) => {
-    Reflect.defineMetadata(queryDataMetadataKey, req.headers, handler);
+    Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
   },
   [paramDataMetadataKey]: (req: Request, handler: Function) => {
-    Reflect.defineMetadata(paramDataMetadataKey, req.headers, handler);
+    Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
   },
 };
 
-function handleResult(
-  result: any,
-  res: Response<any, Record<string, any>>,
-  next: NextFunction | undefined
-) {
-  if (result) {
-    res.json(result);
-  } else {
-    res.send();
-  }
+// function handleResult(
+//   result: any,
+//   res: Response<any, Record<string, any>>,
+//   next: NextFunction | undefined
+// ) {
+//   if (result) {
+//     res.json(result);
+//   } else {
+//     res.send();
+//   }
 
-  if (next) {
-    next();
-  }
-}
+//   if (next) {
+//     next();
+//   }
+// }
 
 function addMetadata(req: Request, handler: Function, keys: symbol[]) {
   for (const key of keys) {

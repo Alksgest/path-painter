@@ -1,3 +1,4 @@
+import { TypeDecoratorParams } from "../types/enums";
 import {
   postMetadataKey,
   getMetadataKey,
@@ -12,8 +13,10 @@ import {
   paramDataMetadataKey,
   paramNameMetadataKey,
   putMetadataKey,
+  validationMetadataKey,
 } from "../types/symbols";
 import { getFunctionArgumentsList } from "../util";
+import { validateBodyModel } from "./field-validators";
 
 export function Post(path: string = ""): MethodDecorator {
   return function (
@@ -64,12 +67,12 @@ function commonMethodImpl(
 ) {
   const funcArguments = getFunctionArgumentsList(descriptor.value);
 
-  applyMetadata(
+  applyBodyMetadata(
     target,
     propertyKey,
     descriptor,
     funcArguments,
-    bodyMetadataKey,
+    bodyMetadataKey, // probably should be removed for get
     bodyDataMetadataKey
   );
   applyMetadata(
@@ -152,20 +155,69 @@ function applyMetadata(
 
   if (functionArgumentIndexes) {
     descriptor.value = function (...args: any[]) {
-      const headers = Reflect.getOwnMetadata(
-        metadataValueKey,
-        descriptor.value
-      );
+      const data = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
       for (const index of functionArgumentIndexes) {
         const propName = funcArguments[index];
-        Object.keys(headers).forEach((key) => {
+        Object.keys(data).forEach((key) => {
           if (propName !== key) {
             return;
           }
-          args[index] = headers[key];
+          args[index] = data[key];
         });
       }
+
+      return oldFunc.apply(this, args);
+    };
+  }
+
+  return descriptor.value;
+}
+
+function applyBodyMetadata(
+  target: Object,
+  propertyKey: string | symbol,
+  descriptor: PropertyDescriptor,
+  funcArguments: string[],
+  metadataKey: symbol,
+  metadataValueKey: symbol
+): Function {
+  let oldFunc: Function = descriptor.value;
+  let index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
+
+  if (index !== undefined && index !== null) {
+    descriptor.value = function (...args: any[]) {
+      const body = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
+
+      const propName = funcArguments[index];
+      Object.keys(body).forEach((key) => {
+        if (propName !== key) {
+          return;
+        }
+
+        let model = body[key];
+
+        let shouldBeValidated = Reflect.getOwnMetadataKeys(
+          target,
+          propertyKey
+        ).includes(validationMetadataKey);
+
+        if (shouldBeValidated) {
+          let paramType = Reflect.getOwnMetadata(
+            "design:paramtypes",
+            target,
+            propertyKey
+          );
+
+          paramType =
+            paramType?.length !== undefined ? paramType[0] : paramType;
+
+          // TODO: send TypeDecoratorParams throw decorator
+          model = validateBodyModel(model, paramType);
+        }
+
+        args[index] = model;
+      });
 
       return oldFunc.apply(this, args);
     };
