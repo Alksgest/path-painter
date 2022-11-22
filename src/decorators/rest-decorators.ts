@@ -209,8 +209,6 @@ function applyBodyMetadata(
             propertyKey
           );
 
-          console.log("paramType: ", paramType);
-
           paramType =
             paramType?.length !== undefined ? paramType[0] : paramType;
 

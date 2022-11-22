@@ -6,16 +6,18 @@ import {
   queryDataMetadataKey,
   paramDataMetadataKey,
 } from "../types/symbols";
-import { Constructor } from "../types/settings";
+import { ConstructorType } from "../types/settings";
 
-export const restHandlers: {
+type RestHandler = {
   [key: string]: (
     app: Express,
     path: string,
-    controller: Constructor,
+    controller: ConstructorType,
     functionName: string
   ) => void;
-} = {
+};
+
+export const restHandlers: RestHandler = {
   get: getFunc,
   post: postFunc,
   put: putFunc,
@@ -25,15 +27,15 @@ export const restHandlers: {
 function getFunc(
   app: Express,
   path: string,
-  controller: Constructor,
+  controller: ConstructorType,
   functionName: string
-) {
+): void {
   app.get(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
       // TODO: entry point for DI
       try {
-        const obj = new (controller as any)();
+        const obj = new controller();
         const handler: Function = obj[functionName];
 
         addMetadata(req, handler, [
@@ -71,15 +73,15 @@ function getFunc(
 function postFunc(
   app: Express,
   path: string,
-  controller: Constructor,
+  controller: ConstructorType,
   functionName: string
-) {
+): void {
   app.post(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
       try {
         // TODO: entry point for DI
-        const obj = new (controller as any)();
+        const obj = new controller();
         const handler: Function = obj[functionName];
 
         addMetadata(req, handler, [
@@ -118,15 +120,15 @@ function postFunc(
 function putFunc(
   app: Express,
   path: string,
-  controller: Constructor,
+  controller: ConstructorType,
   functionName: string
-) {
+): void {
   app.put(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
       try {
         // TODO: entry point for DI
-        const obj = new (controller as any)();
+        const obj = new controller();
         const handler: Function = obj[functionName];
 
         addMetadata(req, handler, [
@@ -165,15 +167,15 @@ function putFunc(
 function deleteFunc(
   app: Express,
   path: string,
-  controller: Constructor,
+  controller: ConstructorType,
   functionName: string
-) {
+): void {
   app.delete(
     path,
     async (req: Request, res: Response, next: NextFunction | undefined) => {
       try {
         // TODO: entry point for DI
-        const obj = new (controller as any)();
+        const obj = new controller();
         const handler: Function = obj[functionName];
 
         addMetadata(req, handler, [

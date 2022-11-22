@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import cors from "cors";
 import { Express, Request, Response } from "express";
-import { Constructor, ControllerBaseConfig } from "../types/settings";
+import { ConstructorType, ControllerBaseConfig } from "../types/settings";
 import { controllerMetadataKey, emptySymbol } from "../types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { IExpressMiddleware } from "../types/web";
@@ -24,7 +24,10 @@ function setupCors(config: ControllerBaseConfig, app: Express) {
   }
 }
 
-function registerController(controller: Constructor, app: Express) {
+function registerController(
+  controller: ConstructorType,
+  app: Express
+) {
   const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
   // wrong class registered as controller
@@ -63,7 +66,7 @@ function registerController(controller: Constructor, app: Express) {
 }
 
 function registerEndpointWithMiddlewares(
-  controller: Constructor,
+  controller: ConstructorType,
   funcName: string,
   controllerPath: string,
   app: Express
@@ -129,7 +132,7 @@ function registerEndpoint(
   restKey: symbol,
   combinedPath: string,
   app: Express,
-  controller: Constructor,
+  controller: ConstructorType,
   funcName: string
 ) {
   const stringKey = restKey.description!;

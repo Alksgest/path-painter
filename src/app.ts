@@ -14,6 +14,7 @@ import {
   Validate,
   IsBoolean,
 } from "./decorators";
+import { ControllerBaseConfig } from "./types/settings";
 import { IExpressMiddleware } from "./types/web";
 
 class TestMiddleware implements IExpressMiddleware {
@@ -36,10 +37,16 @@ class TestControllerMiddleware implements IExpressMiddleware {
   }
 }
 
-class TestModel {
-  @IsNumber({ notStrictTypeCheck: true })
+// class TestModel {
+//   @IsNumber({ notStrictTypeCheck: true })
+//   value1?: string;
+//   @IsBoolean()
+//   value2?: boolean;
+// }
+
+
+interface TestModel {
   value1?: string;
-  @IsBoolean()
   value2?: boolean;
 }
 
@@ -68,7 +75,7 @@ export class TestController {
   // }
 }
 
-const config = {
+const config: ControllerBaseConfig = {
   cors: true,
   controllers: [TestController],
 };

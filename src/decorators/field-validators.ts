@@ -1,7 +1,7 @@
 import { TypeDecoratorParams } from "../types/enums";
 import { RequestError } from "../types/errors";
 import { PropertyMetadata } from "../types/metadata";
-import { Constructor } from "../types/settings";
+import { ConstructorType } from "../types/settings";
 import { validationParamsMetadataKey } from "../types/symbols";
 import { isNullOrUndefined } from "../util";
 
@@ -50,8 +50,6 @@ const validationFunctions: {
 
     const isNumber = typeof value === "number";
 
-    console.log("params?.notStrictTypingCheck: ", params?.notStrictTypeCheck);
-
     if (!params?.notStrictTypeCheck && !isNumber) {
       throw new RequestError(
         400,
@@ -88,9 +86,13 @@ const validationFunctions: {
 
 export function validateBodyModel(
   initialModel: Record<string, unknown>,
-  ctorFunc: Constructor<Record<string, unknown>>
+  ctorFunc: ConstructorType
 ) {
   const props: string[] = Reflect.getMetadataKeys(ctorFunc.prototype);
+
+  if (!props.length) {
+    return initialModel;
+  }
 
   const obj = new ctorFunc();
 
@@ -101,16 +103,11 @@ export function validateBodyModel(
       ctorFunc.prototype
     );
 
-    console.log("metadata: ", metadata);
-
     const validated = validationFunctions[metadata.dataType](
       initialValue,
       prop,
       metadata.params
     );
-
-    console.log("validated: ", validated);
-    console.log("initialValue: ", initialValue);
 
     obj[prop] = validated;
   }
