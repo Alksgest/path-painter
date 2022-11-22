@@ -9,5 +9,5 @@ export enum DataType {
 export type TypeDecoratorParams = {
   isArray?: boolean;
   isOptional?: boolean;
-  notStrictTypingCheck?: boolean;
+  notStrictTypeCheck?: boolean;
 };

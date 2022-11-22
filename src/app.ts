@@ -12,6 +12,7 @@ import {
   IsString,
   IsNumber,
   Validate,
+  IsBoolean,
 } from "./decorators";
 import { IExpressMiddleware } from "./types/web";
 
@@ -36,10 +37,10 @@ class TestControllerMiddleware implements IExpressMiddleware {
 }
 
 class TestModel {
-  @IsString()
+  @IsNumber({ notStrictTypeCheck: true })
   value1?: string;
-  @IsNumber()
-  value2?: number;
+  @IsBoolean()
+  value2?: boolean;
 }
 
 @UseAfter(TestControllerMiddleware)

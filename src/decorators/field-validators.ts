@@ -1,5 +1,9 @@
 import { TypeDecoratorParams } from "../types/enums";
 import { RequestError } from "../types/errors";
+import { PropertyMetadata } from "../types/metadata";
+import { Constructor } from "../types/settings";
+import { validationParamsMetadataKey } from "../types/symbols";
+import { isNullOrUndefined } from "../util";
 
 const validationFunctions: {
   [key: string]: <T>(
@@ -14,13 +18,17 @@ const validationFunctions: {
     }
 
     if (!value) {
-      throw new RequestError(400, `Value of ${fieldName} can not be null or undefined.`);
+      throw new RequestError(
+        400,
+        `Value of ${fieldName} can not be null or undefined.`
+      );
     }
 
     const isString = typeof value === "string";
 
-    if (!params?.notStrictTypingCheck && !isString) {
-      throw new RequestError(400,
+    if (!params?.notStrictTypeCheck && !isString) {
+      throw new RequestError(
+        400,
         `Value of field ${fieldName} was ${value} that is not a string.`
       );
     }
@@ -32,15 +40,21 @@ const validationFunctions: {
       return undefined;
     }
 
-    if (!value) {
+    if (isNullOrUndefined(value)) {
       //TODO: create errors hierarchy
-      throw new RequestError(400,`Value of ${fieldName} can not be null or undefined.`);
+      throw new RequestError(
+        400,
+        `Value of ${fieldName} can not be null or undefined.`
+      );
     }
 
     const isNumber = typeof value === "number";
 
-    if (!params?.notStrictTypingCheck && !isNumber) {
-      throw new RequestError(400,
+    console.log("params?.notStrictTypingCheck: ", params?.notStrictTypeCheck);
+
+    if (!params?.notStrictTypeCheck && !isNumber) {
+      throw new RequestError(
+        400,
         `Value of field ${fieldName} was ${value} that is not a number.`
       );
     }
@@ -48,18 +62,20 @@ const validationFunctions: {
     const castedValue = Number(value);
 
     if (isNaN(castedValue)) {
-      throw new RequestError(400,
+      throw new RequestError(
+        400,
         `Value of ${fieldName} was ${value} and can not be converted to number.`
       );
     }
 
     return castedValue as unknown as T;
   },
-  Boolean: <T>(value: T, fieldName: string, params?: TypeDecoratorParams) => {
+  boolean: <T>(value: T, fieldName: string, params?: TypeDecoratorParams) => {
     const isBoolean = typeof value === "boolean";
 
-    if (!params?.notStrictTypingCheck && !isBoolean) {
-      throw new RequestError(400,
+    if (!params?.notStrictTypeCheck && !isBoolean) {
+      throw new RequestError(
+        400,
         `Value of field ${fieldName} was ${value} that is not a boolean.`
       );
     }
@@ -71,21 +87,32 @@ const validationFunctions: {
 };
 
 export function validateBodyModel(
-  initialModel: any,
-  ctorFunc: Function,
-  params?: TypeDecoratorParams
+  initialModel: Record<string, unknown>,
+  ctorFunc: Constructor<Record<string, unknown>>
 ) {
-  const props = Reflect.getMetadataKeys(ctorFunc.prototype);
+  const props: string[] = Reflect.getMetadataKeys(ctorFunc.prototype);
 
-  const obj = new (ctorFunc as any)();
+  const obj = new ctorFunc();
 
   for (const prop of props) {
     const initialValue = initialModel[prop];
-    const propType = Reflect.getMetadata(prop, ctorFunc.prototype);
+    const metadata: PropertyMetadata = Reflect.getMetadata(
+      prop,
+      ctorFunc.prototype
+    );
 
-    const validated = validationFunctions[propType](initialValue, prop, params);
+    console.log("metadata: ", metadata);
 
-    obj[prop] = initialValue;
+    const validated = validationFunctions[metadata.dataType](
+      initialValue,
+      prop,
+      metadata.params
+    );
+
+    console.log("validated: ", validated);
+    console.log("initialValue: ", initialValue);
+
+    obj[prop] = validated;
   }
 
   return obj;

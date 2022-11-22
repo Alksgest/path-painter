@@ -22,7 +22,7 @@ function registerMetadataAndReturnDecorator(
       return;
     }
 
-    // if descriptor is not undefined it is mean, that it is a function, not a class
+    // if descriptor is not undefined it means, that it is a function, not a class
     const obj = descriptor ? descriptor.value : target;
     Reflect.defineMetadata(middlewareKey, middlewares, obj);
   };

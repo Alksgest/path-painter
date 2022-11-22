@@ -48,3 +48,7 @@ export function getRestKey(keys: symbol[]): symbol {
     }) || emptySymbol
   );
 }
+
+export function isNullOrUndefined(value: unknown) {
+  return value === undefined || value === null;
+}

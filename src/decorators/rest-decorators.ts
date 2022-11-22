@@ -15,7 +15,7 @@ import {
   putMetadataKey,
   validationMetadataKey,
 } from "../types/symbols";
-import { getFunctionArgumentsList } from "../util";
+import { getFunctionArgumentsList, isNullOrUndefined } from "../util";
 import { validateBodyModel } from "./field-validators";
 
 export function Post(path: string = ""): MethodDecorator {
@@ -102,15 +102,15 @@ function applyParamsMetadata(
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor
 ): Function {
-  let oldFunc: Function = descriptor.value;
-  let functionArgumentIndexes = Reflect.getOwnMetadata(
+  const oldFunc: Function = descriptor.value;
+  const functionArgumentIndexes = Reflect.getOwnMetadata(
     paramMetadataKey,
     target,
     propertyKey
   );
 
   if (functionArgumentIndexes) {
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (...args: unknown[]) {
       const params = Reflect.getOwnMetadata(
         paramDataMetadataKey,
         descriptor.value
@@ -146,8 +146,8 @@ function applyMetadata(
   metadataKey: symbol,
   metadataValueKey: symbol
 ): Function {
-  let oldFunc: Function = descriptor.value;
-  let functionArgumentIndexes = Reflect.getOwnMetadata(
+  const oldFunc: Function = descriptor.value;
+  const functionArgumentIndexes = Reflect.getOwnMetadata(
     metadataKey,
     target,
     propertyKey
@@ -185,7 +185,7 @@ function applyBodyMetadata(
   let oldFunc: Function = descriptor.value;
   let index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
 
-  if (index !== undefined && index !== null) {
+  if (!isNullOrUndefined(index)) {
     descriptor.value = function (...args: any[]) {
       const body = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
@@ -197,7 +197,7 @@ function applyBodyMetadata(
 
         let model = body[key];
 
-        let shouldBeValidated = Reflect.getOwnMetadataKeys(
+        const shouldBeValidated = Reflect.getOwnMetadataKeys(
           target,
           propertyKey
         ).includes(validationMetadataKey);
@@ -208,6 +208,8 @@ function applyBodyMetadata(
             target,
             propertyKey
           );
+
+          console.log("paramType: ", paramType);
 
           paramType =
             paramType?.length !== undefined ? paramType[0] : paramType;

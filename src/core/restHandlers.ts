@@ -6,12 +6,13 @@ import {
   queryDataMetadataKey,
   paramDataMetadataKey,
 } from "../types/symbols";
+import { Constructor } from "../types/settings";
 
 export const restHandlers: {
   [key: string]: (
     app: Express,
     path: string,
-    controller: Function,
+    controller: Constructor,
     functionName: string
   ) => void;
 } = {
@@ -24,7 +25,7 @@ export const restHandlers: {
 function getFunc(
   app: Express,
   path: string,
-  controller: Function,
+  controller: Constructor,
   functionName: string
 ) {
   app.get(
@@ -70,7 +71,7 @@ function getFunc(
 function postFunc(
   app: Express,
   path: string,
-  controller: Function,
+  controller: Constructor,
   functionName: string
 ) {
   app.post(
@@ -117,7 +118,7 @@ function postFunc(
 function putFunc(
   app: Express,
   path: string,
-  controller: Function,
+  controller: Constructor,
   functionName: string
 ) {
   app.put(
@@ -164,7 +165,7 @@ function putFunc(
 function deleteFunc(
   app: Express,
   path: string,
-  controller: Function,
+  controller: Constructor,
   functionName: string
 ) {
   app.delete(

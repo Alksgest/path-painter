@@ -23,6 +23,8 @@ export const useAfterMetadataKey = Symbol("useAfter");
 export const validationMetadataKey = Symbol("validation");
 export const validationSchemaMetadataKey = Symbol("validationSchema");
 
+export const validationParamsMetadataKey = Symbol("params");
+
 export const emptySymbol = Symbol();
 
 export const restMethodSwitchObj: { [key: string]: symbol } = {
