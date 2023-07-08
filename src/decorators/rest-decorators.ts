@@ -1,4 +1,3 @@
-import { TypeDecoratorParams } from "../types/enums";
 import {
   postMetadataKey,
   getMetadataKey,

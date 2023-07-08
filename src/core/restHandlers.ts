@@ -13,7 +13,7 @@ type RestHandler = {
     app: Express,
     path: string,
     controller: ConstructorType,
-    functionName: string
+    functionName: string,
   ) => void;
 };
 
@@ -28,7 +28,7 @@ function getFunc(
   app: Express,
   path: string,
   controller: ConstructorType,
-  functionName: string
+  functionName: string,
 ): void {
   app.get(
     path,
@@ -66,7 +66,7 @@ function getFunc(
           }
         }
       }
-    }
+    },
   );
 }
 
@@ -74,7 +74,7 @@ function postFunc(
   app: Express,
   path: string,
   controller: ConstructorType,
-  functionName: string
+  functionName: string,
 ): void {
   app.post(
     path,
@@ -113,7 +113,7 @@ function postFunc(
           }
         }
       }
-    }
+    },
   );
 }
 
@@ -121,7 +121,7 @@ function putFunc(
   app: Express,
   path: string,
   controller: ConstructorType,
-  functionName: string
+  functionName: string,
 ): void {
   app.put(
     path,
@@ -160,7 +160,7 @@ function putFunc(
           }
         }
       }
-    }
+    },
   );
 }
 
@@ -168,7 +168,7 @@ function deleteFunc(
   app: Express,
   path: string,
   controller: ConstructorType,
-  functionName: string
+  functionName: string,
 ): void {
   app.delete(
     path,
@@ -207,7 +207,7 @@ function deleteFunc(
           }
         }
       }
-    }
+    },
   );
 }
 

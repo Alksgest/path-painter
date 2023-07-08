@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    // "types": ["node"],
     "lib": ["ES2015", "DOM"],
     "sourceMap": true,
     "outDir": "./dist",
@@ -9,12 +8,10 @@
     "strict": true,
     "esModuleInterop": true,
     "noEmitOnError": false,
-    "watch": true,
     "module": "CommonJS",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "downlevelIteration": true
   },
-  "ts-node": {},
   "exclude": ["node_modules", "jest.config.ts", "tests", "example.ts"]
 }

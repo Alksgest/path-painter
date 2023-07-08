@@ -33,7 +33,7 @@ function registerController(controller: ConstructorType, app: Express) {
   }
 
   const functions = Object.getOwnPropertyNames(controller.prototype).filter(
-    (f) => f != "constructor"
+    (f) => f != "constructor",
   );
 
   if (!functions?.length) {
@@ -42,7 +42,7 @@ function registerController(controller: ConstructorType, app: Express) {
 
   const basePath: string = Reflect.getOwnMetadata(
     controllerMetadataKey,
-    controller
+    controller,
   );
 
   const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
@@ -66,7 +66,7 @@ function registerEndpointWithMiddlewares(
   controller: ConstructorType,
   funcName: string,
   controllerPath: string,
-  app: Express
+  app: Express,
 ): boolean {
   const func: Function = controller.prototype[funcName];
   const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
@@ -100,11 +100,11 @@ function registerMiddlewares(
   middlewareKey: symbol,
   func: Function,
   combinedPath: string,
-  app: Express
+  app: Express,
 ) {
   const middlewaresClasses: Function[] = Reflect.getMetadata(
     middlewareKey,
-    func
+    func,
   );
 
   for (const middleware of middlewaresClasses) {
@@ -117,10 +117,10 @@ function registerMiddlewares(
       async (
         request: Request,
         response: Response,
-        next: (err?: any) => any
+        next: (err?: any) => any,
       ) => {
         return await Promise.resolve(handler(request, response, next));
-      }
+      },
     );
   }
 }
@@ -130,7 +130,7 @@ function registerEndpoint(
   combinedPath: string,
   app: Express,
   controller: ConstructorType,
-  funcName: string
+  funcName: string,
 ) {
   const stringKey = restKey.description!;
 
