@@ -4,10 +4,14 @@ export type ConstructorType<T = Record<string, any>> = new (
   ...args: unknown[]
 ) => T;
 
+export type UnknownFunction<ReturnType = unknown> = (
+  ...args: unknown[]
+) => ReturnType;
+
 export interface ControllerBaseConfig {
   cors?: boolean | string;
   controllers?: ConstructorType[];
-  errorHandler?: Function;
+  errorHandler?: UnknownFunction<void>;
 }
 
 export type RestHandler = {
@@ -15,6 +19,6 @@ export type RestHandler = {
     app: Express,
     path: string,
     controller: ConstructorType,
-    functionName: string
+    functionName: string,
   ) => void;
 };

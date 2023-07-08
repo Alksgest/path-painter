@@ -1,4 +1,3 @@
-import { DataType } from "../types/enums";
 import {
   bodyMetadataKey,
   headerMetadataKey,
@@ -6,69 +5,67 @@ import {
   paramNameMetadataKey,
   queryMetadataKey,
   validationMetadataKey,
-  validationSchemaMetadataKey,
 } from "../types/symbols";
 
 export function Validate() {
   return function (
-    target: Object,
+    target: object,
     propertyKey: string | symbol,
-    parameterIndex: number
+    parameterIndex: number,
   ) {
     Reflect.defineMetadata(
       validationMetadataKey,
       parameterIndex,
       target,
-      propertyKey
+      propertyKey,
     );
   };
 }
 
-export function FromBody(
-  target: Object,
+export function Body(
+  target: object,
   propertyKey: string | symbol,
-  parameterIndex: number
-) {
-  let existingParams: number[] =
-    Reflect.getOwnMetadata(bodyMetadataKey, target, propertyKey) || [];
-
-  existingParams.push(parameterIndex);
-
+  parameterIndex: number,
+): void {
   Reflect.defineMetadata(bodyMetadataKey, parameterIndex, target, propertyKey);
 }
 
-export function FromHeader(
-  target: Object,
+export function Header(
+  target: object,
   propertyKey: string | symbol,
-  parameterIndex: number
-) {
+  parameterIndex: number,
+): void {
   Reflect.defineMetadata(
     headerMetadataKey,
     parameterIndex,
     target,
-    propertyKey
+    propertyKey,
   );
 }
 
-export function FromQuery(
-  target: Object,
+export function Query(
+  target: object,
   propertyKey: string | symbol,
-  parameterIndex: number
-) {
+  parameterIndex: number,
+): void {
   Reflect.defineMetadata(queryMetadataKey, parameterIndex, target, propertyKey);
 }
 
-export function FromParam(name: string): ParameterDecorator {
+export function Param(name: string): ParameterDecorator {
   return function (
-    target: Object,
-    propertyKey: string | symbol,
-    parameterIndex: number
+    target: object,
+    propertyKey: string | symbol | undefined,
+    parameterIndex: number,
   ) {
+    if (!propertyKey) {
+      return;
+    }
+
     Reflect.defineMetadata(
       paramMetadataKey,
       parameterIndex,
       target,
-      propertyKey
+      propertyKey,
     );
 
     Reflect.defineMetadata(paramNameMetadataKey, name, target, propertyKey);

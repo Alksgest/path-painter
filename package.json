@@ -5,9 +5,7 @@
   "main": "app.js",
   "scripts": {
     "build": "npx tsc",
-    "start": "ts-node src/app.ts",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/app.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node src/app.ts"
   },
   "author": "",
   "license": "ISC",

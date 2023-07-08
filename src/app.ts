@@ -4,9 +4,9 @@ import { useExpressServer } from "./core";
 import {
   Controller,
   Post,
-  FromBody,
+  Body,
   Get,
-  FromParam,
+  Param,
   UseBefore,
   UseAfter,
   IsString,
@@ -54,7 +54,7 @@ interface TestModel {
 export class TestController_ {
   @UseBefore(TestControllerMiddleware)
   @Post()
-  testPost(@Validate() @FromBody model: TestModel): TestModel {
+  testPost(@Validate() @Body model: TestModel): TestModel {
     console.log("model: ", model);
     return model;
   }
@@ -73,7 +73,6 @@ export class TestController_ {
   //   return Promise.resolve(id);
   // }
 }
-
 
 @UseAfter(TestControllerMiddleware)
 @Controller("/test")

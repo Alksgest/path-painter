@@ -2,14 +2,13 @@ import { TypeDecoratorParams } from "../types/enums";
 import { RequestError } from "../types/errors";
 import { PropertyMetadata } from "../types/metadata";
 import { ConstructorType } from "../types/settings";
-import { validationParamsMetadataKey } from "../types/symbols";
 import { isNullOrUndefined } from "../util";
 
 const validationFunctions: {
   [key: string]: <T>(
     value: any,
     fieldName: string,
-    params?: TypeDecoratorParams
+    params?: TypeDecoratorParams,
   ) => T | undefined;
 } = {
   string: <T>(value: any, fieldName: string, params?: TypeDecoratorParams) => {
@@ -20,7 +19,7 @@ const validationFunctions: {
     if (!value) {
       throw new RequestError(
         400,
-        `Value of ${fieldName} can not be null or undefined.`
+        `Value of ${fieldName} can not be null or undefined.`,
       );
     }
 
@@ -29,7 +28,7 @@ const validationFunctions: {
     if (!params?.notStrictTypeCheck && !isString) {
       throw new RequestError(
         400,
-        `Value of field ${fieldName} was ${value} that is not a string.`
+        `Value of field ${fieldName} was ${value} that is not a string.`,
       );
     }
 
@@ -44,7 +43,7 @@ const validationFunctions: {
       //TODO: create errors hierarchy
       throw new RequestError(
         400,
-        `Value of ${fieldName} can not be null or undefined.`
+        `Value of ${fieldName} can not be null or undefined.`,
       );
     }
 
@@ -53,7 +52,7 @@ const validationFunctions: {
     if (!params?.notStrictTypeCheck && !isNumber) {
       throw new RequestError(
         400,
-        `Value of field ${fieldName} was ${value} that is not a number.`
+        `Value of field ${fieldName} was ${value} that is not a number.`,
       );
     }
 
@@ -62,7 +61,7 @@ const validationFunctions: {
     if (isNaN(castedValue)) {
       throw new RequestError(
         400,
-        `Value of ${fieldName} was ${value} and can not be converted to number.`
+        `Value of ${fieldName} was ${value} and can not be converted to number.`,
       );
     }
 
@@ -74,7 +73,7 @@ const validationFunctions: {
     if (!params?.notStrictTypeCheck && !isBoolean) {
       throw new RequestError(
         400,
-        `Value of field ${fieldName} was ${value} that is not a boolean.`
+        `Value of field ${fieldName} was ${value} that is not a boolean.`,
       );
     }
 
@@ -86,7 +85,7 @@ const validationFunctions: {
 
 export function validateBodyModel(
   initialModel: Record<string, unknown>,
-  ctorFunc: ConstructorType
+  ctorFunc: ConstructorType,
 ) {
   const props: string[] = Reflect.getMetadataKeys(ctorFunc.prototype);
 
@@ -100,16 +99,14 @@ export function validateBodyModel(
     const initialValue = initialModel[prop];
     const metadata: PropertyMetadata = Reflect.getMetadata(
       prop,
-      ctorFunc.prototype
+      ctorFunc.prototype,
     );
 
-    const validated = validationFunctions[metadata.dataType](
+    obj[prop] = validationFunctions[metadata.dataType](
       initialValue,
       prop,
-      metadata.params
+      metadata.params,
     );
-
-    obj[prop] = validated;
   }
 
   return obj;

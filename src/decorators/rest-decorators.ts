@@ -12,57 +12,57 @@ import {
   paramDataMetadataKey,
   paramNameMetadataKey,
   putMetadataKey,
-  validationMetadataKey,
 } from "../types/symbols";
 import { getFunctionArgumentsList, isNullOrUndefined } from "../util";
 import { validateBodyModel } from "./field-validators";
+import { UnknownFunction } from "../types/settings";
 
-export function Post(path: string = ""): MethodDecorator {
+export function Post(path = ""): MethodDecorator {
   return function (
-    target: Object,
+    target: object,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     commonMethodImpl(target, propertyKey, descriptor, path, postMetadataKey);
   };
 }
 
-export function Put(path: string = ""): MethodDecorator {
+export function Put(path = ""): MethodDecorator {
   return function (
-    target: Object,
+    target: NonNullable<unknown>,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     commonMethodImpl(target, propertyKey, descriptor, path, putMetadataKey);
   };
 }
 
-export function Get(path: string = ""): MethodDecorator {
+export function Get(path = ""): MethodDecorator {
   return function (
-    target: Object,
+    target: NonNullable<unknown>,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     commonMethodImpl(target, propertyKey, descriptor, path, getMetadataKey);
   };
 }
 
-export function Delete(path: string = ""): MethodDecorator {
+export function Delete(path = ""): MethodDecorator {
   return function (
-    target: Object,
+    target: NonNullable<unknown>,
     propertyKey: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     commonMethodImpl(target, propertyKey, descriptor, path, deleteMetadataKey);
   };
 }
 
 function commonMethodImpl(
-  target: Object,
+  target: object,
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
   path: string,
-  method: Symbol
+  method: symbol,
 ) {
   const funcArguments = getFunctionArgumentsList(descriptor.value);
 
@@ -72,7 +72,7 @@ function commonMethodImpl(
     descriptor,
     funcArguments,
     bodyMetadataKey, // probably should be removed for get
-    bodyDataMetadataKey
+    bodyDataMetadataKey,
   );
   applyMetadata(
     target,
@@ -80,7 +80,7 @@ function commonMethodImpl(
     descriptor,
     funcArguments,
     headerMetadataKey,
-    headerDataMetadataKey
+    headerDataMetadataKey,
   );
   applyMetadata(
     target,
@@ -88,7 +88,7 @@ function commonMethodImpl(
     descriptor,
     funcArguments,
     queryMetadataKey,
-    queryDataMetadataKey
+    queryDataMetadataKey,
   );
 
   applyParamsMetadata(target, propertyKey, descriptor);
@@ -97,28 +97,28 @@ function commonMethodImpl(
 }
 
 function applyParamsMetadata(
-  target: Object,
+  target: object,
   propertyKey: string | symbol,
-  descriptor: PropertyDescriptor
-): Function {
-  const oldFunc: Function = descriptor.value;
+  descriptor: PropertyDescriptor,
+): UnknownFunction {
+  const oldFunc = descriptor.value as UnknownFunction;
   const functionArgumentIndexes = Reflect.getOwnMetadata(
     paramMetadataKey,
     target,
-    propertyKey
+    propertyKey,
   );
 
   if (functionArgumentIndexes) {
     descriptor.value = function (...args: unknown[]) {
       const params = Reflect.getOwnMetadata(
         paramDataMetadataKey,
-        descriptor.value
+        descriptor.value,
       );
 
       const name = Reflect.getOwnMetadata(
         paramNameMetadataKey,
         target,
-        propertyKey
+        propertyKey,
       );
 
       for (const index of functionArgumentIndexes) {
@@ -138,18 +138,18 @@ function applyParamsMetadata(
 }
 
 function applyMetadata(
-  target: Object,
+  target: object,
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
   funcArguments: string[],
   metadataKey: symbol,
-  metadataValueKey: symbol
-): Function {
-  const oldFunc: Function = descriptor.value;
+  metadataValueKey: symbol,
+): UnknownFunction {
+  const oldFunc = descriptor.value as UnknownFunction;
   const functionArgumentIndexes = Reflect.getOwnMetadata(
     metadataKey,
     target,
-    propertyKey
+    propertyKey,
   );
 
   if (functionArgumentIndexes) {
@@ -174,15 +174,15 @@ function applyMetadata(
 }
 
 function applyBodyMetadata(
-  target: Object,
+  target: object,
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
   funcArguments: string[],
   metadataKey: symbol,
-  metadataValueKey: symbol
-): Function {
-  let oldFunc: Function = descriptor.value;
-  let index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
+  metadataValueKey: symbol,
+): UnknownFunction {
+  const oldFunc = descriptor.value as UnknownFunction;
+  const index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
 
   if (!isNullOrUndefined(index)) {
     descriptor.value = function (...args: any[]) {
@@ -196,24 +196,22 @@ function applyBodyMetadata(
 
         let model = body[key];
 
-        const shouldBeValidated = Reflect.getOwnMetadataKeys(
+        // const shouldBeValidated = Reflect.getOwnMetadataKeys(
+        //   target,
+        //   propertyKey,
+        // ).includes(validationMetadataKey);
+
+        // if (shouldBeValidated) {
+        let paramType = Reflect.getOwnMetadata(
+          "design:paramtypes",
           target,
-          propertyKey
-        ).includes(validationMetadataKey);
+          propertyKey,
+        );
 
-        if (shouldBeValidated) {
-          let paramType = Reflect.getOwnMetadata(
-            "design:paramtypes",
-            target,
-            propertyKey
-          );
+        paramType = paramType?.length !== undefined ? paramType[0] : paramType;
 
-          paramType =
-            paramType?.length !== undefined ? paramType[0] : paramType;
-
-          // TODO: send TypeDecoratorParams throw decorator
-          model = validateBodyModel(model, paramType);
-        }
+        model = validateBodyModel(model, paramType);
+        // }
 
         args[index] = model;
       });

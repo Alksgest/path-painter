@@ -1,13 +1,20 @@
 import "reflect-metadata";
 import cors from "cors";
 import { Express, Request, Response } from "express";
-import { ConstructorType, ControllerBaseConfig } from "../types/settings";
+import {
+  ConstructorType,
+  ControllerBaseConfig,
+  UnknownFunction,
+} from "../types/settings";
 import { controllerMetadataKey, emptySymbol } from "../types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { IExpressMiddleware } from "../types/web";
-import { restHandlers } from "./restHandlers";
+import { restHandlers } from "./rest-handlers";
 
-export function useExpressServer(app: Express, config: ControllerBaseConfig) {
+export function useExpressServer(
+  app: Express,
+  config: ControllerBaseConfig,
+): void {
   setupCors(config, app);
 
   const controllers = config.controllers || [];
@@ -24,7 +31,7 @@ function setupCors(config: ControllerBaseConfig, app: Express) {
   }
 }
 
-function registerController(controller: ConstructorType, app: Express) {
+function registerController(controller: ConstructorType, app: Express): void {
   const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
   // wrong class registered as controller
@@ -68,7 +75,7 @@ function registerEndpointWithMiddlewares(
   controllerPath: string,
   app: Express,
 ): boolean {
-  const func: Function = controller.prototype[funcName];
+  const func = controller.prototype[funcName] as UnknownFunction;
   const funcMetadataKeys: symbol[] = Reflect.getOwnMetadataKeys(func);
 
   const restKey = getRestKey(funcMetadataKeys);
@@ -98,14 +105,14 @@ function registerEndpointWithMiddlewares(
 
 function registerMiddlewares(
   middlewareKey: symbol,
-  func: Function,
+  func: UnknownFunction | ConstructorType,
   combinedPath: string,
   app: Express,
-) {
-  const middlewaresClasses: Function[] = Reflect.getMetadata(
+): void {
+  const middlewaresClasses = Reflect.getMetadata(
     middlewareKey,
     func,
-  );
+  ) as UnknownFunction[];
 
   for (const middleware of middlewaresClasses) {
     // TODO: get from DI
@@ -131,8 +138,12 @@ function registerEndpoint(
   app: Express,
   controller: ConstructorType,
   funcName: string,
-) {
-  const stringKey = restKey.description!;
+): void {
+  const stringKey = restKey.description;
+
+  if (!stringKey) {
+    return;
+  }
 
   const registerEndpointMethod = restHandlers[stringKey];
 
