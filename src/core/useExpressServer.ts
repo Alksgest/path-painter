@@ -24,10 +24,7 @@ function setupCors(config: ControllerBaseConfig, app: Express) {
   }
 }
 
-function registerController(
-  controller: ConstructorType,
-  app: Express
-) {
+function registerController(controller: ConstructorType, app: Express) {
   const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
   // wrong class registered as controller
@@ -99,12 +96,12 @@ function registerEndpointWithMiddlewares(
   return true;
 }
 
-const registerMiddlewares = (
+function registerMiddlewares(
   middlewareKey: symbol,
   func: Function,
   combinedPath: string,
   app: Express
-) => {
+) {
   const middlewaresClasses: Function[] = Reflect.getMetadata(
     middlewareKey,
     func
@@ -126,7 +123,7 @@ const registerMiddlewares = (
       }
     );
   }
-};
+}
 
 function registerEndpoint(
   restKey: symbol,

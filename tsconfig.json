@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "types": ["node"],
+    // "types": ["node"],
     "lib": ["ES2015", "DOM"],
     "sourceMap": true,
     "outDir": "./dist",

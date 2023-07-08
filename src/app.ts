@@ -44,16 +44,15 @@ class TestControllerMiddleware implements IExpressMiddleware {
 //   value2?: boolean;
 // }
 
-
 interface TestModel {
   value1?: string;
   value2?: boolean;
 }
 
 @UseAfter(TestControllerMiddleware)
-@UseBefore(TestControllerMiddleware)
 @Controller("/test")
-export class TestController {
+export class TestController_ {
+  @UseBefore(TestControllerMiddleware)
   @Post()
   testPost(@Validate() @FromBody model: TestModel): TestModel {
     console.log("model: ", model);
@@ -75,12 +74,36 @@ export class TestController {
   // }
 }
 
+
+@UseAfter(TestControllerMiddleware)
+@Controller("/test")
+export class TestController {
+  @Get()
+  testGet() {
+    console.log("test get");
+    return "test get";
+  }
+}
+
+// Особливості побудови бібліотеки для розширення функціональності фреймворку express платформи node.js
+// зробити план проєкту
+
 const config: ControllerBaseConfig = {
   cors: true,
   controllers: [TestController],
 };
 
-let app: Express = express();
+const app: Express = express();
+
+app.get("/test", (req, res, next) => {
+  console.log("test get");
+
+  res.json("test get");
+
+  if (next) {
+    next();
+  }
+});
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -91,7 +114,9 @@ app.listen(8000, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
 });
 
-//TODO: remove default usage of body parser as middleware
-//TODO: add file receiving
-//TODO: add decorators for types for swagger
-//TODO: add validation decorators such as Min, Max, In, Required etc.
+// TODO: remove default usage of body parser as middleware
+// TODO: add file receiving
+// TODO: add decorators for types for swagger
+// TODO: add validation decorators such as Min, Max, In, Required etc.
+// TODO: add auth middleware
+// TODO: di container
