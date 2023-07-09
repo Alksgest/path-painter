@@ -14,10 +14,6 @@
   },
   "author": "Vladyslav Kyrychenko",
   "license": "ISC",
-  "files": [
-    "index.js",
-    "dist/"
-  ],
   "keywords": [
     "express",
     "framework",
