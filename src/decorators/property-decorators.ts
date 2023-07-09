@@ -1,14 +1,14 @@
-import { DataType, TypeDecoratorParams } from "../types/enums";
+import { DataType, DecoratorParamsType } from "../types/enums";
 import { PropertyMetadata } from "../types/metadata";
 import { ConstructorType } from "../types/settings";
 
-export function IsTypeOf(ctor: ConstructorType) {
+export function IsType(ctor: ConstructorType) {
   return function (target: NonNullable<unknown>, propertyKey: string | symbol) {
     Reflect.defineMetadata(propertyKey, ctor.name, target);
   };
 }
 
-export function IsString(params?: TypeDecoratorParams): PropertyDecorator {
+export function IsString(params?: DecoratorParamsType): PropertyDecorator {
   return function (target: NonNullable<unknown>, propertyKey: string | symbol) {
     const metadata: PropertyMetadata = {
       dataType: DataType.String,
@@ -19,7 +19,7 @@ export function IsString(params?: TypeDecoratorParams): PropertyDecorator {
   };
 }
 
-export function IsNumber(params?: TypeDecoratorParams): PropertyDecorator {
+export function IsNumber(params?: DecoratorParamsType): PropertyDecorator {
   return function (target: object, propertyKey: string | symbol) {
     const metadata: PropertyMetadata = {
       dataType: DataType.Number,
@@ -30,7 +30,7 @@ export function IsNumber(params?: TypeDecoratorParams): PropertyDecorator {
   };
 }
 
-export function IsBoolean(params?: TypeDecoratorParams): PropertyDecorator {
+export function IsBoolean(params?: DecoratorParamsType): PropertyDecorator {
   return function (target: NonNullable<unknown>, propertyKey: string | symbol) {
     const metadata: PropertyMetadata = {
       dataType: DataType.Boolean,

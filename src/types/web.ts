@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 
-export interface IExpressMiddleware {
-  use(
-    request: Request,
-    response: Response,
-    next: (err?: unknown) => unknown,
-  ): unknown;
+export type ExpressUse = (
+  request: Request,
+  response: Response,
+  next: (err?: unknown) => unknown,
+) => void;
+
+export interface IMiddleware {
+  use: ExpressUse;
 }

@@ -2,58 +2,40 @@ import "reflect-metadata";
 import { useBeforeMetadataKey, useAfterMetadataKey } from "../types/symbols";
 import { ConstructorType, UnknownFunction } from "../types/settings";
 
-// export function UseBefore(
-//   ...middlewares: (UnknownFunction | ConstructorType)[]
-// ): MethodDecorator | ClassDecorator {
-//   return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
-// }
-
-export function UseBefore(
-  ...middlewares: (UnknownFunction | ConstructorType)[]
-): any {
-  return function (
-    target: any,
-    propertyKey?: string | symbol,
-    descriptor?: TypedPropertyDescriptor<any>,
-  ) {
-    if (propertyKey && descriptor) {
-      return registerMethodMetadataAndReturnDecorator(
-        middlewares,
-        useBeforeMetadataKey,
-      )(target, propertyKey, descriptor);
-    } else {
-      return registerClassMetadataAndReturnDecorator(
-        middlewares,
-        useBeforeMetadataKey,
-      )(target);
-    }
-  };
+export function UseBefore(...middlewares: object[]): any {
+  return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
 }
 
-export function UseAfter(
-  ...middlewares: (UnknownFunction | ConstructorType)[]
-): any {
-  return function (
-    target: any,
+export function UseAfter(...middlewares: object[]): any {
+  return registerMetadataAndReturnDecorator(middlewares, useAfterMetadataKey);
+}
+
+function registerMetadataAndReturnDecorator(
+  middlewares: object[],
+  metadataKey: symbol,
+) {
+  return (
+    target: unknown,
     propertyKey?: string | symbol,
-    descriptor?: TypedPropertyDescriptor<any>,
-  ) {
+    descriptor?: TypedPropertyDescriptor<unknown>,
+  ) => {
     if (propertyKey && descriptor) {
-      return registerMethodMetadataAndReturnDecorator(
-        middlewares,
-        useAfterMetadataKey,
-      )(target, propertyKey, descriptor);
+      return registerMethodMetadataAndReturnDecorator(middlewares, metadataKey)(
+        target as object,
+        propertyKey,
+        descriptor,
+      );
     } else {
       return registerClassMetadataAndReturnDecorator(
         middlewares,
-        useAfterMetadataKey,
-      )(target);
+        metadataKey,
+      )(target as UnknownFunction);
     }
   };
 }
 
 function registerMethodMetadataAndReturnDecorator(
-  middlewares: (UnknownFunction | ConstructorType)[],
+  middlewares: object[],
   middlewareKey: symbol,
 ): MethodDecorator {
   return function (
@@ -70,7 +52,7 @@ function registerMethodMetadataAndReturnDecorator(
 }
 
 function registerClassMetadataAndReturnDecorator(
-  middlewares: (UnknownFunction | ConstructorType)[],
+  middlewares: object[],
   middlewareKey: symbol,
 ): ClassDecorator {
   return function (target: object) {

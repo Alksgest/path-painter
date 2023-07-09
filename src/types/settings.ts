@@ -1,8 +1,6 @@
 import { Express } from "express";
 
-export type ConstructorType<T = Record<string, any>> = new (
-  ...args: unknown[]
-) => T;
+export type ConstructorType<T = Record<string, unknown>> = new (...args: unknown[]) => T;
 
 export type UnknownFunction<ReturnType = unknown> = (
   ...args: unknown[]

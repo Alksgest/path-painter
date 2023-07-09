@@ -6,7 +6,7 @@ export enum DataType {
   Date = "date",
 }
 
-export type TypeDecoratorParams = {
+export type DecoratorParamsType = {
   isArray?: boolean;
   isOptional?: boolean;
   notStrictTypeCheck?: boolean;

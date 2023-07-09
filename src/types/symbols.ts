@@ -13,15 +13,11 @@ export const bodyMetadataKey = Symbol("body");
 export const headerMetadataKey = Symbol("header");
 export const queryMetadataKey = Symbol("query");
 export const paramMetadataKey = Symbol("param");
-export const paramNameMetadataKey = Symbol("paramName");
 
 export const controllerMetadataKey = Symbol("controller");
 
 export const useBeforeMetadataKey = Symbol("useBefore");
 export const useAfterMetadataKey = Symbol("useAfter");
-
-export const validationMetadataKey = Symbol("validation");
-export const validationSchemaMetadataKey = Symbol("validationSchema");
 
 export const emptySymbol = Symbol();
 

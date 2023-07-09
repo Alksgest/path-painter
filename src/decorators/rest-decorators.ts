@@ -7,73 +7,99 @@ import {
   headerDataMetadataKey,
   queryMetadataKey,
   queryDataMetadataKey,
-  paramMetadataKey,
   deleteMetadataKey,
-  paramDataMetadataKey,
-  paramNameMetadataKey,
   putMetadataKey,
 } from "../types/symbols";
-import { getFunctionArgumentsList, isNullOrUndefined } from "../util";
+import {
+  getFunctionArgumentsList,
+  getParamMetadata,
+  getParamValues,
+  isNullOrUndefined,
+} from "../util";
 import { validateBodyModel } from "./field-validators";
 import { UnknownFunction } from "../types/settings";
 
 export function Post(path = ""): MethodDecorator {
-  return function(
+  return function (
     target: object,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
-  ) {
-    commonMethodImpl(target, propertyKey, descriptor, path, postMetadataKey);
+  ): void {
+    registerRestAction(
+      target,
+      propertyKey,
+      descriptor,
+      path,
+      postMetadataKey,
+      true,
+    );
   };
 }
 
 export function Put(path = ""): MethodDecorator {
-  return function(
+  return function (
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
-  ) {
-    commonMethodImpl(target, propertyKey, descriptor, path, putMetadataKey);
+  ): void {
+    registerRestAction(
+      target,
+      propertyKey,
+      descriptor,
+      path,
+      putMetadataKey,
+      true,
+    );
   };
 }
 
 export function Get(path = ""): MethodDecorator {
-  return function(
+  return function (
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
-  ) {
-    commonMethodImpl(target, propertyKey, descriptor, path, getMetadataKey);
+  ): void {
+    registerRestAction(target, propertyKey, descriptor, path, getMetadataKey);
   };
 }
 
 export function Delete(path = ""): MethodDecorator {
-  return function(
+  return function (
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
-  ) {
-    commonMethodImpl(target, propertyKey, descriptor, path, deleteMetadataKey);
+  ): void {
+    registerRestAction(
+      target,
+      propertyKey,
+      descriptor,
+      path,
+      deleteMetadataKey,
+    );
   };
 }
 
-function commonMethodImpl(
+function registerRestAction(
   target: object,
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
   path: string,
   method: symbol,
+  includeBody?: boolean,
 ) {
   const funcArguments = getFunctionArgumentsList(descriptor.value);
 
-  applyBodyMetadata(
-    target,
-    propertyKey,
-    descriptor,
-    funcArguments,
-    bodyMetadataKey, // probably should be removed for get
-    bodyDataMetadataKey,
-  );
+  if (includeBody) {
+    applyBodyMetadata(
+      target,
+      propertyKey,
+      descriptor,
+      funcArguments,
+      bodyMetadataKey,
+      bodyDataMetadataKey,
+    );
+  }
+
   applyMetadata(
     target,
     propertyKey,
@@ -103,30 +129,16 @@ function applyParamsMetadata(
 ): UnknownFunction {
   const oldFunc = descriptor.value as UnknownFunction;
   // TODO: create typed wrapper under getting metadata bonded by key
-  const paramsList = Reflect.getOwnMetadata(
-    paramMetadataKey,
-    target,
-    propertyKey,
-  );
+  const paramsList = getParamMetadata(target, propertyKey);
 
   if (!isNullOrUndefined(paramsList)) {
-    descriptor.value = function(...args: unknown[]) {
-      const paramsValues = Reflect.getOwnMetadata(
-        paramDataMetadataKey,
-        descriptor.value,
-      );
-
-      const name = Reflect.getOwnMetadata(
-        paramNameMetadataKey,
-        target,
-        propertyKey,
-      );
+    descriptor.value = function (...args: unknown[]) {
+      const paramValues = getParamValues(oldFunc);
 
       for (const obj of paramsList) {
-        const value = paramsValues[obj.name];
+        const value = paramValues[obj.name];
         const position = obj.position;
 
-        // TODO: we should indicate if value undefined
         args[position] = value;
       }
 
@@ -153,7 +165,7 @@ function applyMetadata(
   );
 
   if (functionArgumentIndexes) {
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function (...args: unknown[]) {
       const data = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
       for (const index of functionArgumentIndexes) {
@@ -185,7 +197,7 @@ function applyBodyMetadata(
   const index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
 
   if (!isNullOrUndefined(index)) {
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function (...args: unknown[]) {
       const body = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
       const propName = funcArguments[index];

@@ -2,25 +2,9 @@ import {
   bodyMetadataKey,
   headerMetadataKey,
   paramMetadataKey,
-  paramNameMetadataKey,
   queryMetadataKey,
-  validationMetadataKey,
 } from "../types/symbols";
-
-export function Validate() {
-  return function(
-    target: object,
-    propertyKey: string | symbol,
-    parameterIndex: number,
-  ) {
-    Reflect.defineMetadata(
-      validationMetadataKey,
-      parameterIndex,
-      target,
-      propertyKey,
-    );
-  };
-}
+import { ParamMetadata } from "../types/metadata";
 
 export function Body(
   target: object,
@@ -52,7 +36,7 @@ export function Query(
 }
 
 export function Param(name: string): ParameterDecorator {
-  return function(
+  return function (
     target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number,
@@ -61,7 +45,7 @@ export function Param(name: string): ParameterDecorator {
       return;
     }
 
-    const existingParams: { position: number; name: string }[] =
+    const existingParams: ParamMetadata[] =
       Reflect.getOwnMetadata(paramMetadataKey, target, propertyKey) || [];
 
     existingParams.push({ position: parameterIndex, name });
@@ -72,7 +56,5 @@ export function Param(name: string): ParameterDecorator {
       target,
       propertyKey,
     );
-
-    // Reflect.defineMetadata(paramNameMetadataKey, name, target, propertyKey);
   };
 }

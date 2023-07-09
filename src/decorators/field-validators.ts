@@ -1,17 +1,15 @@
-import { TypeDecoratorParams } from "../types/enums";
+import { DecoratorParamsType } from "../types/enums";
 import { RequestError } from "../types/errors";
-import { PropertyMetadata } from "../types/metadata";
+import { PropertyMetadata, ValidationFunction } from "../types/metadata";
 import { ConstructorType } from "../types/settings";
 import { isNullOrUndefined } from "../util";
 
-const validationFunctions: {
-  [key: string]: <T>(
-    value: any,
-    fieldName: string,
-    params?: TypeDecoratorParams,
-  ) => T | undefined;
-} = {
-  string: <T>(value: any, fieldName: string, params?: TypeDecoratorParams) => {
+export interface ValidationFunctionsSwitch<T> {
+  [key: string]: ValidationFunction<T>;
+}
+
+const validationFunctions: ValidationFunctionsSwitch<unknown> = {
+  string: (value: unknown, fieldName: string, params?: DecoratorParamsType) => {
     if (params?.isOptional && !value) {
       return undefined;
     }
@@ -32,9 +30,9 @@ const validationFunctions: {
       );
     }
 
-    return (value as any).toString() as T;
+    return value.toString();
   },
-  number: <T>(value: any, fieldName: string, params?: TypeDecoratorParams) => {
+  number: (value: unknown, fieldName: string, params?: DecoratorParamsType) => {
     if (params?.isOptional && !value) {
       return undefined;
     }
@@ -65,9 +63,13 @@ const validationFunctions: {
       );
     }
 
-    return castedValue as unknown as T;
+    return castedValue;
   },
-  boolean: <T>(value: T, fieldName: string, params?: TypeDecoratorParams) => {
+  boolean: (
+    value: unknown,
+    fieldName: string,
+    params?: DecoratorParamsType,
+  ) => {
     const isBoolean = typeof value === "boolean";
 
     if (!params?.notStrictTypeCheck && !isBoolean) {
@@ -77,7 +79,7 @@ const validationFunctions: {
       );
     }
 
-    return !!value as unknown as T;
+    return !!value;
   },
   //   Date: <T>(value: T, fieldName: string, params?: TypeDecoratorParams) =>
   //     void 0,

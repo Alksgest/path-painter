@@ -1,6 +1,4 @@
-import bodyParser from "body-parser";
-import express, { Express, Request, Response } from "express";
-import { useExpressServer } from "./core";
+import { Request, Response } from "express";
 import {
   Controller,
   Post,
@@ -9,16 +7,13 @@ import {
   Param,
   UseBefore,
   UseAfter,
-  IsString,
-  IsNumber,
-  Validate,
-  IsBoolean,
 } from "./decorators";
 import { ControllerBaseConfig } from "./types/settings";
-import { IExpressMiddleware } from "./types/web";
+import { IMiddleware } from "./types/web";
+import { AppContainer } from "./app-container";
 
-class TestMiddleware implements IExpressMiddleware {
-  use(request: Request, response: Response, next: (err?: any) => any) {
+class TestMiddleware implements IMiddleware {
+  use(request: Request, response: Response, next: (err?: unknown) => unknown) {
     console.log("Hello from middleware!");
 
     if (next) {
@@ -27,8 +22,8 @@ class TestMiddleware implements IExpressMiddleware {
   }
 }
 
-class TestControllerMiddleware implements IExpressMiddleware {
-  use(request: Request, response: Response, next: (err?: any) => any) {
+class TestControllerMiddleware implements IMiddleware {
+  use(request: Request, response: Response, next: (err?: unknown) => unknown) {
     console.log("Hello from controller middleware!");
 
     if (next) {
@@ -36,13 +31,6 @@ class TestControllerMiddleware implements IExpressMiddleware {
     }
   }
 }
-
-// class TestModel {
-//   @IsNumber({ notStrictTypeCheck: true })
-//   value1?: string;
-//   @IsBoolean()
-//   value2?: boolean;
-// }
 
 interface TestModel {
   value1?: string;
@@ -54,7 +42,7 @@ interface TestModel {
 export class TestController {
   @UseBefore(TestControllerMiddleware)
   @Post()
-  testPost(@Validate() @Body model: TestModel): TestModel {
+  testPost(@Body model: TestModel): TestModel {
     console.log("model: ", model);
     return model;
   }
@@ -68,7 +56,7 @@ export class TestController {
   @UseAfter(TestMiddleware)
   @UseBefore(TestMiddleware)
   @Get("/byId/:id")
-  testGetWithParam(@Param("id") id: string, @Param("ss") ss: string) {
+  testGetWithParam(@Param("id") id: string) {
     console.log("controller method invoke!");
     console.log("id: ", id);
     return Promise.resolve(id);
@@ -88,25 +76,25 @@ export class TestController {
 // Особливості побудови бібліотеки для розширення функціональності фреймворку express платформи node.js
 // зробити план проєкту
 
-const config: ControllerBaseConfig = {
-  cors: true,
-  controllers: [TestController],
-};
-
-const app: Express = express();
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-useExpressServer(app, config);
-
-app.listen(8000, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
-});
-
 // TODO: remove default usage of body parser as middleware
 // TODO: add file receiving
 // TODO: add decorators for types for swagger
 // TODO: add validation decorators such as Min, Max, In, Required etc.
 // TODO: add auth middleware
 // TODO: di container
+
+function main() {
+  const config: ControllerBaseConfig = {
+    cors: true,
+    controllers: [TestController],
+  };
+
+  const appContainer = new AppContainer();
+  appContainer.build(config);
+
+  appContainer.listen(8000, () => {
+    console.log(`⚡️[server]: Server is running at http://localhost:${8000}`);
+  });
+}
+
+main();
