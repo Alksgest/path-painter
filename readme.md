@@ -1,0 +1,69 @@
+## Path Painter
+A dynamic and intuitive library for Node.js, enabling developers to 'paint' their application's routes effortlessly. Leveraging the power of decorators, it transforms controller definitions into beautifully crafted, easy-to-manage routes (ChatGPT).
+
+### Features:
+- `@Controller` decorator which allows to class be registered as controller 
+- `@Get`, `@Post`, `@Put`, `@Delete` decorators for controller methods. Decorating methods with this decorators automatically creates corresponding routs.
+- `@UseBefore`, `@UseAfter` decorators for registering middlewares on method or class level.
+- `@IsBoolean`, `@IsString`, `@IsNumber` decorators for validating input data
+- `@Body`, `@Header`, `@Query`, `@Param` decorators for injecting corresponding data into the methods  
+
+### Controller example
+Below can be found simple example of controller.
+<br>Despite on name `MethodLevelMiddleware` can be applied on class level as well</br>
+```ts
+@UseBefore(ClassLevelMiddleware)
+@Controller("/users")
+export class UserController {
+  @UseBefore(MethodLevelMiddleware)
+  @Get("/:id")
+  getUser(@Param("id") id: number): UserModel {
+    console.log(`Getting user by ${id} id`);
+    return {
+      id,
+      name: "Test Name",
+      age: -1,
+    };
+  }
+
+  @UseAfter(MethodLevelMiddleware)
+  @Post()
+  createUser(@Body dto: CreateUserDto) {
+    console.log("Received dto: ", dto);
+    return -1;
+  }
+}
+```
+
+### Model validation example
+Below can be found example of model with property validation decorators.
+```ts
+class CreateUserDto {
+  @IsString()
+  name?: string;
+  @IsNumber({ isOptional: true })
+  age?: number;
+}
+```
+### Startup example
+Library provides class-container `AppContainer` for encapsulating logic of setting up and starting of an application.
+
+Example of usage can be seen below.
+```ts
+function main() {
+    const config: AppConfig = {
+        cors: true,
+        globalPrefix: "api",
+        controllers: [UserController],
+    };
+    
+    const appContainer = new AppContainer();
+    appContainer.build(config);
+    
+    appContainer.listen(8000, () => {
+        console.log(`[server]: Server is running at http://localhost:${8000}`);
+    });
+}
+    
+main();
+```
