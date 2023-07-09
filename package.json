@@ -1,6 +1,6 @@
 {
   "name": "path-painter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A dynamic and intuitive library for Node.js, enabling developers to 'paint' their application's routes effortlessly.\n Leveraging the power of decorators, it transforms controller definitions into beautifully crafted, easy-to-manage routes.",
   "scripts": {
     "build": "del /S /q dist & npx tsc",
