@@ -1,6 +1,6 @@
 import { Express } from "express";
 
-export type ConstructorType<T = Record<string, unknown>> = new (...args: unknown[]) => T;
+export type ConstructorType<T = unknown> = new (...args: unknown[]) => T;
 
 export type UnknownFunction<ReturnType = unknown> = (
   ...args: unknown[]
@@ -8,7 +8,7 @@ export type UnknownFunction<ReturnType = unknown> = (
 
 export interface ControllerBaseConfig {
   cors?: boolean | string;
-  controllers?: ConstructorType[];
+  controllers?: object[];
   errorHandler?: UnknownFunction<void>;
 }
 

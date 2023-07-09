@@ -2,16 +2,16 @@ import "reflect-metadata";
 import { useBeforeMetadataKey, useAfterMetadataKey } from "../types/symbols";
 import { ConstructorType, UnknownFunction } from "../types/settings";
 
-export function UseBefore(...middlewares: object[]): any {
+export function UseBefore(...middlewares: ConstructorType[]): any {
   return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
 }
 
-export function UseAfter(...middlewares: object[]): any {
+export function UseAfter(...middlewares: ConstructorType[]): any {
   return registerMetadataAndReturnDecorator(middlewares, useAfterMetadataKey);
 }
 
 function registerMetadataAndReturnDecorator(
-  middlewares: object[],
+  middlewares: ConstructorType[],
   metadataKey: symbol,
 ) {
   return (
@@ -35,7 +35,7 @@ function registerMetadataAndReturnDecorator(
 }
 
 function registerMethodMetadataAndReturnDecorator(
-  middlewares: object[],
+  middlewares: ConstructorType[],
   middlewareKey: symbol,
 ): MethodDecorator {
   return function (
@@ -52,7 +52,7 @@ function registerMethodMetadataAndReturnDecorator(
 }
 
 function registerClassMetadataAndReturnDecorator(
-  middlewares: object[],
+  middlewares: ConstructorType[],
   middlewareKey: symbol,
 ): ClassDecorator {
   return function (target: object) {

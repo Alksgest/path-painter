@@ -94,7 +94,9 @@ function createHandlerWithBody(
     try {
       // TODO: entry point for DI
       const obj = new controller();
-      const handler = obj[functionName] as UnknownFunction;
+      const handler = (obj as Record<string, unknown>)[
+        functionName
+      ] as UnknownFunction;
 
       addMetadata(req, handler, [
         bodyDataMetadataKey,
@@ -140,7 +142,9 @@ function createHandlerWithoutBody(
     // TODO: entry point for DI
     try {
       const obj = new controller();
-      const handler = obj[functionName] as UnknownFunction;
+      const handler = (obj as Record<string, unknown>)[
+        functionName
+      ] as UnknownFunction;
 
       addMetadata(req, handler, [
         headerDataMetadataKey,

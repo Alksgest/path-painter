@@ -95,7 +95,7 @@ export function validateBodyModel(
     return initialModel;
   }
 
-  const obj = new ctorFunc();
+  const obj = new ctorFunc() as Record<string, unknown>;
 
   for (const prop of props) {
     const initialValue = initialModel[prop];

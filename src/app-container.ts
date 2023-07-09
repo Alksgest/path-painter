@@ -27,7 +27,7 @@ export class AppContainer {
     const controllers = config.controllers || [];
 
     controllers.forEach((controller) =>
-      this.registerController(controller, this.app),
+      this.registerController(controller as ConstructorType, this.app),
     );
   }
 
@@ -147,7 +147,7 @@ export class AppContainer {
     for (const middleware of middlewaresClasses) {
       // TODO: get from DI
       const obj = new middleware();
-      const handler = obj.use as ExpressUse;
+      const handler = (obj as Record<string, unknown>).use as ExpressUse;
 
       if (!handler) {
         console.log(
