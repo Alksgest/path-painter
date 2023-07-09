@@ -8,7 +8,7 @@ import {
 } from "../types/symbols";
 
 export function Validate() {
-  return function (
+  return function(
     target: object,
     propertyKey: string | symbol,
     parameterIndex: number,
@@ -52,7 +52,7 @@ export function Query(
 }
 
 export function Param(name: string): ParameterDecorator {
-  return function (
+  return function(
     target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number,
@@ -61,13 +61,18 @@ export function Param(name: string): ParameterDecorator {
       return;
     }
 
+    const existingParams: { position: number; name: string }[] =
+      Reflect.getOwnMetadata(paramMetadataKey, target, propertyKey) || [];
+
+    existingParams.push({ position: parameterIndex, name });
+
     Reflect.defineMetadata(
       paramMetadataKey,
-      parameterIndex,
+      existingParams,
       target,
       propertyKey,
     );
 
-    Reflect.defineMetadata(paramNameMetadataKey, name, target, propertyKey);
+    // Reflect.defineMetadata(paramNameMetadataKey, name, target, propertyKey);
   };
 }

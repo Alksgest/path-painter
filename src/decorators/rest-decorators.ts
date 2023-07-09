@@ -18,7 +18,7 @@ import { validateBodyModel } from "./field-validators";
 import { UnknownFunction } from "../types/settings";
 
 export function Post(path = ""): MethodDecorator {
-  return function (
+  return function(
     target: object,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
@@ -28,7 +28,7 @@ export function Post(path = ""): MethodDecorator {
 }
 
 export function Put(path = ""): MethodDecorator {
-  return function (
+  return function(
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
@@ -38,7 +38,7 @@ export function Put(path = ""): MethodDecorator {
 }
 
 export function Get(path = ""): MethodDecorator {
-  return function (
+  return function(
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
@@ -48,7 +48,7 @@ export function Get(path = ""): MethodDecorator {
 }
 
 export function Delete(path = ""): MethodDecorator {
-  return function (
+  return function(
     target: NonNullable<unknown>,
     propertyKey: string | symbol,
     descriptor: PropertyDescriptor,
@@ -102,15 +102,16 @@ function applyParamsMetadata(
   descriptor: PropertyDescriptor,
 ): UnknownFunction {
   const oldFunc = descriptor.value as UnknownFunction;
-  const functionArgumentIndexes = Reflect.getOwnMetadata(
+  // TODO: create typed wrapper under getting metadata bonded by key
+  const paramsList = Reflect.getOwnMetadata(
     paramMetadataKey,
     target,
     propertyKey,
   );
 
-  if (functionArgumentIndexes) {
-    descriptor.value = function (...args: unknown[]) {
-      const params = Reflect.getOwnMetadata(
+  if (!isNullOrUndefined(paramsList)) {
+    descriptor.value = function(...args: unknown[]) {
+      const paramsValues = Reflect.getOwnMetadata(
         paramDataMetadataKey,
         descriptor.value,
       );
@@ -121,13 +122,12 @@ function applyParamsMetadata(
         propertyKey,
       );
 
-      for (const index of functionArgumentIndexes) {
-        Object.keys(params).forEach((key) => {
-          if (name !== key) {
-            return;
-          }
-          args[index] = params[key];
-        });
+      for (const obj of paramsList) {
+        const value = paramsValues[obj.name];
+        const position = obj.position;
+
+        // TODO: we should indicate if value undefined
+        args[position] = value;
       }
 
       return oldFunc.apply(this, args);
@@ -153,7 +153,7 @@ function applyMetadata(
   );
 
   if (functionArgumentIndexes) {
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function(...args: any[]) {
       const data = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
       for (const index of functionArgumentIndexes) {
@@ -185,7 +185,7 @@ function applyBodyMetadata(
   const index = Reflect.getOwnMetadata(metadataKey, target, propertyKey);
 
   if (!isNullOrUndefined(index)) {
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function(...args: any[]) {
       const body = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
       const propName = funcArguments[index];

@@ -51,7 +51,7 @@ interface TestModel {
 
 @UseAfter(TestControllerMiddleware)
 @Controller("/test")
-export class TestController_ {
+export class TestController {
   @UseBefore(TestControllerMiddleware)
   @Post()
   testPost(@Validate() @Body model: TestModel): TestModel {
@@ -59,30 +59,31 @@ export class TestController_ {
     return model;
   }
 
-  // @Get()
-  // testGet() {
-  //   console.log("test get");
-  //   return "TEST GET";
-  // }
-
-  // @UseAfter(TestMiddleware)
-  // @UseBefore(TestMiddleware)
-  // @Get("/byId/:id")
-  // testGetWithParam(@FromParam("id") id: string) {
-  //   console.log("controller method invoke!");
-  //   return Promise.resolve(id);
-  // }
-}
-
-@UseAfter(TestControllerMiddleware)
-@Controller("/test")
-export class TestController {
   @Get()
   testGet() {
     console.log("test get");
-    return "test get";
+    return "TEST GET";
+  }
+
+  @UseAfter(TestMiddleware)
+  @UseBefore(TestMiddleware)
+  @Get("/byId/:id")
+  testGetWithParam(@Param("id") id: string, @Param("ss") ss: string) {
+    console.log("controller method invoke!");
+    console.log("id: ", id);
+    return Promise.resolve(id);
   }
 }
+
+// @UseAfter(TestControllerMiddleware)
+// @Controller("/test")
+// export class TestController {
+//   @Get()
+//   testGet() {
+//     console.log("test get");
+//     return "test get";
+//   }
+// }
 
 // Особливості побудови бібліотеки для розширення функціональності фреймворку express платформи node.js
 // зробити план проєкту
@@ -93,16 +94,6 @@ const config: ControllerBaseConfig = {
 };
 
 const app: Express = express();
-
-app.get("/test", (req, res, next) => {
-  console.log("test get");
-
-  res.json("test get");
-
-  if (next) {
-    next();
-  }
-});
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

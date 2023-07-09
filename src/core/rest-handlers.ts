@@ -42,6 +42,7 @@ function addGetHandler(
   controller: ConstructorType,
   functionName: string,
 ): void {
+  console.log(`[${controller.name}] registered get ${path}`);
   app.get(path, createHandlerWithoutBody(controller, functionName));
 }
 
@@ -51,6 +52,7 @@ function addPostHandler(
   controller: ConstructorType,
   functionName: string,
 ): void {
+  console.log(`[${controller.name}] registered post ${path}`);
   app.post(path, createHandlerWithBody(controller, functionName));
 }
 
@@ -60,6 +62,7 @@ function addPutHandler(
   controller: ConstructorType,
   functionName: string,
 ): void {
+  console.log(`[${controller.name}] registered put ${path}`);
   app.put(path, createHandlerWithBody(controller, functionName));
 }
 
@@ -69,6 +72,7 @@ function addDeleteHandler(
   controller: ConstructorType,
   functionName: string,
 ): void {
+  console.log(`[${controller.name}] registered delete ${path}`);
   app.delete(path, createHandlerWithoutBody(controller, functionName));
 }
 
