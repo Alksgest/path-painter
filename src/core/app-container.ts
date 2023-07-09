@@ -1,17 +1,16 @@
 import express, { Express, Request, Response } from "express";
-import {
-  ConstructorType,
-  UnknownFunction,
-} from "../types/settings";
+import { ConstructorType, UnknownFunction } from "../types/settings";
 import cors from "cors";
 import { controllerMetadataKey, emptySymbol } from "../types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { ExpressUse } from "../types/web";
 import { restHandlers } from "./rest-handlers";
-import { AppConfig } from "../types/app-config";
+import { AppConfig } from "../types";
 
 export class AppContainer {
   private readonly app: Express;
+
+  private config?: AppConfig;
 
   constructor() {
     this.app = express();
@@ -22,6 +21,7 @@ export class AppContainer {
   }
 
   public build(config: AppConfig): void {
+    this.config = config;
     this.setupCors(config, this.app);
 
     const controllers = config.controllers || [];
@@ -56,10 +56,14 @@ export class AppContainer {
       return;
     }
 
-    const basePath: string = Reflect.getOwnMetadata(
+    const globalPrefix = this.config?.globalPrefix;
+
+    const controllerPath: string = Reflect.getOwnMetadata(
       controllerMetadataKey,
       controller,
     );
+
+    const basePath = `${globalPrefix}${controllerPath}`;
 
     const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
 
