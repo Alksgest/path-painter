@@ -1,10 +1,10 @@
 import { DecoratorParamsType } from "../types/enums";
-import { RequestError } from "../types/errors";
+import { RequestError } from "../types";
 import { PropertyMetadata, ValidationFunction } from "../types/metadata";
 import { ConstructorType } from "../types/settings";
 import { isNullOrUndefined } from "../util";
 
-export interface ValidationFunctionsSwitch<T> {
+interface ValidationFunctionsSwitch<T> {
   [key: string]: ValidationFunction<T>;
 }
 

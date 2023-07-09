@@ -6,12 +6,6 @@ export type UnknownFunction<ReturnType = unknown> = (
   ...args: unknown[]
 ) => ReturnType;
 
-export interface ControllerBaseConfig {
-  cors?: boolean | string;
-  controllers?: object[];
-  errorHandler?: UnknownFunction<void>;
-}
-
 export type RestHandler = {
   [key: string]: (
     app: Express,

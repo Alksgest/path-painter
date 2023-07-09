@@ -1,4 +1,4 @@
-import { DataType, DecoratorParamsType } from "./enums";
+  import { DataType, DecoratorParamsType } from "./enums";
 
 export interface PropertyMetadata {
   dataType: DataType;

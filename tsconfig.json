@@ -11,7 +11,8 @@
     "module": "CommonJS",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "declaration": true
   },
-  "exclude": ["node_modules", "jest.config.ts", "tests", "example.ts"]
+  "exclude": ["node_modules", "jest.config.ts", "tests", "./dist/**/*"]
 }

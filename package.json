@@ -1,12 +1,17 @@
 {
   "name": "path-painter",
   "version": "0.1.0",
-  "description": "A dynamic and intuitive library for Node.js, enabling developers to 'paint' their application's routes effortlessly. Leveraging the power of decorators, it transforms controller definitions into beautifully crafted, easy-to-manage routes.",
+  "description": "A dynamic and intuitive library for Node.js, enabling developers to 'paint' their application's routes effortlessly.\n Leveraging the power of decorators, it transforms controller definitions into beautifully crafted, easy-to-manage routes.",
   "scripts": {
     "build": "npx tsc",
     "start": "ts-node src/app.ts"
   },
-  "repository" : "https://github.com/Alksgest/path-painter",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository" : {
+    "url": "https://github.com/Alksgest/path-painter",
+    "type": "git"
+  },
   "author": "Vladyslav Kyrychenko",
   "license": "ISC",
   "dependencies": {

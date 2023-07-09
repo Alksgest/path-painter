@@ -1,14 +1,14 @@
 import express, { Express, Request, Response } from "express";
 import {
   ConstructorType,
-  ControllerBaseConfig,
   UnknownFunction,
-} from "./types/settings";
+} from "../types/settings";
 import cors from "cors";
-import { controllerMetadataKey, emptySymbol } from "./types/symbols";
-import { getRestKey, getUseAfterKey, getUseBeforeKey } from "./util";
-import { ExpressUse } from "./types/web";
-import { restHandlers } from "./core/rest-handlers";
+import { controllerMetadataKey, emptySymbol } from "../types/symbols";
+import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
+import { ExpressUse } from "../types/web";
+import { restHandlers } from "./rest-handlers";
+import { AppConfig } from "../types/app-config";
 
 export class AppContainer {
   private readonly app: Express;
@@ -21,7 +21,7 @@ export class AppContainer {
     this.app.listen(port, callback);
   }
 
-  public build(config: ControllerBaseConfig): void {
+  public build(config: AppConfig): void {
     this.setupCors(config, this.app);
 
     const controllers = config.controllers || [];
@@ -31,7 +31,7 @@ export class AppContainer {
     );
   }
 
-  private setupCors(config: ControllerBaseConfig, app: Express) {
+  private setupCors(config: AppConfig, app: Express) {
     // TODO: add another settings for cors
     if (config.cors) {
       if (config.cors === true) {

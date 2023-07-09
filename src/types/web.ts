@@ -5,7 +5,3 @@ export type ExpressUse = (
   response: Response,
   next: (err?: unknown) => unknown,
 ) => void;
-
-export interface IMiddleware {
-  use: ExpressUse;
-}
