@@ -84,23 +84,23 @@ export class AppContainer {
       controller,
     );
 
-    const basePath = `${globalPrefix}${controllerPath}`;
+    const basePath = `/${globalPrefix}${controllerPath}`;
 
-    const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
-
-    if (useBeforeControllerKey !== emptySymbol) {
-      this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
-    }
+    // const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
+    //
+    // if (useBeforeControllerKey !== emptySymbol) {
+    //   this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
+    // }
 
     for (const funcName of functions) {
       this.registerEndpointWithMiddlewares(controller, funcName, basePath);
     }
 
-    const useAfterControllerKey = getUseAfterKey(controllerKeys);
-
-    if (useAfterControllerKey !== emptySymbol) {
-      this.registerMiddlewares(useAfterControllerKey, controller, basePath);
-    }
+    // const useAfterControllerKey = getUseAfterKey(controllerKeys);
+    //
+    // if (useAfterControllerKey !== emptySymbol) {
+    //   this.registerMiddlewares(useAfterControllerKey, controller, basePath);
+    // }
   }
 
   private registerEndpointWithMiddlewares(
@@ -122,7 +122,7 @@ export class AppContainer {
 
     const methodPath = Reflect.getOwnMetadata(restKey, controllerMethod);
 
-    const combinedPath = `/${controllerPath}${methodPath}`;
+    const combinedPath = `${controllerPath}${methodPath}`;
 
     if (useBeforeKey != emptySymbol) {
       this.registerMiddlewares(useBeforeKey, controllerMethod, combinedPath);
@@ -195,13 +195,16 @@ export class AppContainer {
       functionName: string,
     ) => {
       console.log(`[${controller.name}] registered ${method} ${path}`);
-      const handler = this.createHandler(
-        controller,
-        functionName,
-        method === "get" || method === "delete",
-      );
 
-      this.app[method](path, handler);
+      this.app[method](path, (req, res, next) => {
+        const handler = this.createHandler(
+          controller,
+          functionName,
+          method === "get" || method === "delete",
+        );
+
+        return handler(req, res, next);
+      });
     };
   }
 
