@@ -11,3 +11,8 @@ export type DecoratorParamsType = {
   isOptional?: boolean;
   notStrictTypeCheck?: boolean;
 };
+
+export enum InjectionType {
+  Singleton = "singleton",
+  Transient = "transient",
+}

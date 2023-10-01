@@ -1,6 +1,18 @@
 import "reflect-metadata";
-import { useBeforeMetadataKey, useAfterMetadataKey } from "../types/symbols";
+import {
+  transientMetadataKey,
+  useAfterMetadataKey,
+  useBeforeMetadataKey,
+} from "../types/symbols";
 import { ConstructorType, UnknownFunction } from "../types/settings";
+
+export function Middleware(): ClassDecorator {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  return function <TFunction extends Function>(target: TFunction) {
+    Reflect.defineMetadata(transientMetadataKey, "", target);
+    return target;
+  };
+}
 
 export function UseBefore(...middlewares: ConstructorType[]): any {
   return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
@@ -39,14 +51,13 @@ function registerMethodMetadataAndReturnDecorator(
   middlewareKey: symbol,
 ): MethodDecorator {
   return function (
-    target: object,
-    _: string | symbol,
+    _: object,
+    __: string | symbol,
     descriptor: PropertyDescriptor,
   ) {
     if (middlewares.length === 0) {
       return;
     }
-
     Reflect.defineMetadata(middlewareKey, middlewares, descriptor.value);
   };
 }
@@ -59,7 +70,6 @@ function registerClassMetadataAndReturnDecorator(
     if (middlewares.length === 0) {
       return;
     }
-
     Reflect.defineMetadata(middlewareKey, middlewares, target);
   };
 }

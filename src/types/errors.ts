@@ -1,9 +1,14 @@
-export class RequestError {
+export class RequestError extends Error {
   code?: number;
-  message?: string;
 
   constructor(code?: number, message?: string) {
+    super(message);
     this.code = code;
-    this.message = message;
+  }
+}
+
+export class DependencyInjectionError extends Error {
+  constructor(message?: string) {
+    super(message);
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "path-painter",
-  "version": "0.1.4",
+  "version": "0.2.1",
   "scripts": {
     "build": "del /S /q dist & npx tsc",
     "start": "ts-node src/app.ts"

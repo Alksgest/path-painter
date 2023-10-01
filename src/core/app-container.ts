@@ -1,22 +1,43 @@
-import express, { Express, Request, Response } from "express";
-import { ConstructorType, UnknownFunction } from "../types/settings";
 import cors from "cors";
-import { controllerMetadataKey, emptySymbol } from "../types/symbols";
+import express, { Express, NextFunction, Request, Response } from "express";
+import {
+  ConstructorType,
+  RestHandler,
+  RestMethod,
+  UnknownFunction,
+} from "../types/settings";
+import {
+  bodyDataMetadataKey,
+  controllerMetadataKey,
+  emptySymbol,
+  headerDataMetadataKey,
+  paramDataMetadataKey,
+  queryDataMetadataKey,
+} from "../types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { ExpressUse } from "../types/web";
-import { restHandlers } from "./rest-handlers";
-import { AppConfig } from "../types";
+import { AppConfig, RequestError } from "../types";
+import { DiContainer } from "./di-container";
 
 export class AppContainer {
   private readonly app: Express;
+  private readonly diContainer: DiContainer;
 
   private config?: AppConfig;
 
+  private readonly restHandlers: RestHandler = {
+    get: this.addHandler("get").bind(this),
+    post: this.addHandler("post").bind(this),
+    put: this.addHandler("put").bind(this),
+    delete: this.addHandler("delete").bind(this),
+  };
+
   constructor() {
     this.app = express();
+    this.diContainer = new DiContainer();
   }
 
-  public listen(port: number, callback: () => void): void {
+  public start(port: number, callback: () => void): void {
     this.app.listen(port, callback);
   }
 
@@ -27,7 +48,7 @@ export class AppContainer {
     const controllers = config.controllers || [];
 
     controllers.forEach((controller) =>
-      this.registerController(controller as ConstructorType, this.app),
+      this.registerController(controller as ConstructorType),
     );
   }
 
@@ -40,7 +61,7 @@ export class AppContainer {
     }
   }
 
-  private registerController(controller: ConstructorType, app: Express): void {
+  private registerController(controller: ConstructorType): void {
     const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
     // wrong class registered as controller
@@ -49,7 +70,7 @@ export class AppContainer {
     }
 
     const functions = Object.getOwnPropertyNames(controller.prototype).filter(
-      (f) => f != "constructor",
+      (f) => f !== "constructor",
     );
 
     if (!functions?.length) {
@@ -63,32 +84,22 @@ export class AppContainer {
       controller,
     );
 
-    const basePath = `${globalPrefix}${controllerPath}`;
+    const basePath = `/${globalPrefix}${controllerPath}`;
 
     const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
 
     if (useBeforeControllerKey !== emptySymbol) {
-      this.registerMiddlewares(
-        useBeforeControllerKey,
-        controller,
-        basePath,
-        app,
-      );
+      this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
     }
 
     for (const funcName of functions) {
-      this.registerEndpointWithMiddlewares(controller, funcName, basePath, app);
+      this.registerEndpointWithMiddlewares(controller, funcName, basePath);
     }
 
     const useAfterControllerKey = getUseAfterKey(controllerKeys);
 
     if (useAfterControllerKey !== emptySymbol) {
-      this.registerMiddlewares(
-        useAfterControllerKey,
-        controller,
-        basePath,
-        app,
-      );
+      this.registerMiddlewares(useAfterControllerKey, controller, basePath);
     }
   }
 
@@ -96,7 +107,6 @@ export class AppContainer {
     controller: ConstructorType,
     funcName: string,
     controllerPath: string,
-    app: Express,
   ): boolean {
     const controllerMethod = controller.prototype[funcName] as UnknownFunction;
     const funcMetadataKeys: symbol[] =
@@ -115,23 +125,13 @@ export class AppContainer {
     const combinedPath = `${controllerPath}${methodPath}`;
 
     if (useBeforeKey != emptySymbol) {
-      this.registerMiddlewares(
-        useBeforeKey,
-        controllerMethod,
-        combinedPath,
-        app,
-      );
+      this.registerMiddlewares(useBeforeKey, controllerMethod, combinedPath);
     }
 
-    this.registerEndpoint(restKey, combinedPath, app, controller, funcName);
+    this.registerEndpoint(restKey, combinedPath, controller, funcName);
 
     if (useAfterKey != emptySymbol) {
-      this.registerMiddlewares(
-        useAfterKey,
-        controllerMethod,
-        combinedPath,
-        app,
-      );
+      this.registerMiddlewares(useAfterKey, controllerMethod, combinedPath);
     }
 
     return true;
@@ -141,33 +141,33 @@ export class AppContainer {
     middlewareKey: symbol,
     controllerOrControllerMethod: ConstructorType | UnknownFunction,
     combinedPath: string,
-    app: Express,
   ): void {
     const middlewaresClasses = Reflect.getMetadata(
       middlewareKey,
       controllerOrControllerMethod,
     ) as ConstructorType[];
 
-    for (const middleware of middlewaresClasses) {
-      // TODO: get from DI
-      const obj = new middleware();
-      const handler = (obj as Record<string, unknown>).use as ExpressUse;
-
-      if (!handler) {
-        console.log(
-          `Class ${middleware.name} does not implement IMiddleware interface`,
-        );
-        return;
-      }
-
-      app.use(
+    for (const middlewareType of middlewaresClasses) {
+      this.app.use(
         combinedPath,
         async (
           request: Request,
           response: Response,
           next: (err?: any) => any,
         ) => {
-          return await Promise.resolve(handler(request, response, next));
+          const middleware = this.diContainer.get(middlewareType);
+          const handler = (middleware as any).use.bind(
+            middleware,
+          ) as ExpressUse;
+
+          if (!handler) {
+            console.log(
+              `Class ${middlewareType.name} does not implement IMiddleware interface`,
+            );
+            return;
+          }
+
+          return handler(request, response, next);
         },
       );
     }
@@ -176,18 +176,90 @@ export class AppContainer {
   private registerEndpoint(
     restKey: symbol,
     combinedPath: string,
-    app: Express,
     controller: ConstructorType,
     funcName: string,
   ): void {
-    const stringKey = restKey.description;
+    const stringKey = restKey.description as RestMethod;
 
     if (!stringKey) {
       return;
     }
 
-    const registerEndpointMethod = restHandlers[stringKey];
+    const registerEndpointMethod = this.restHandlers[stringKey];
 
-    registerEndpointMethod(app, combinedPath, controller, funcName);
+    registerEndpointMethod(combinedPath, controller, funcName);
+  }
+
+  private addHandler(method: RestMethod) {
+    return (
+      path: string,
+      controller: ConstructorType,
+      functionName: string,
+    ) => {
+      console.log(`[${controller.name}] registered ${method} ${path}`);
+
+      this.app[method](path, (req, res, next) => {
+        const handler = this.createHandler(
+          controller,
+          functionName,
+          method === "get" || method === "delete",
+        );
+
+        return handler(req, res, next);
+      });
+    };
+  }
+
+  private createHandler(
+    controllerCtor: ConstructorType,
+    functionName: string,
+    noBody = false,
+  ) {
+    return async (
+      req: Request,
+      res: Response,
+      next: NextFunction | undefined,
+    ) => {
+      try {
+        const controller = this.diContainer.get(controllerCtor);
+        const handler = (controller as Record<string, unknown>)[
+          functionName
+        ] as UnknownFunction;
+
+        if (!noBody) {
+          Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
+        }
+
+        Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
+        Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
+        Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
+
+        const bindFunc = handler.bind(controller);
+
+        const result = await Promise.resolve(bindFunc());
+
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          } else {
+            res.status(500);
+            res.send("Internal server error");
+          }
+        }
+      }
+    };
   }
 }
