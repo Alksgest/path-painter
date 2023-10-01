@@ -1,19 +1,19 @@
 import {
-  postMetadataKey,
-  getMetadataKey,
-  bodyMetadataKey,
   bodyDataMetadataKey,
-  headerMetadataKey,
-  headerDataMetadataKey,
-  queryMetadataKey,
-  queryDataMetadataKey,
+  bodyMetadataKey,
   deleteMetadataKey,
+  getMetadataKey,
+  headerDataMetadataKey,
+  headerMetadataKey,
+  paramDataMetadataKey,
+  postMetadataKey,
   putMetadataKey,
+  queryDataMetadataKey,
+  queryMetadataKey,
 } from "../types/symbols";
 import {
   getFunctionArgumentsList,
   getParamMetadata,
-  getParamValues,
   isNullOrUndefined,
 } from "../util";
 import { validateBodyModel } from "./field-validators";
@@ -133,7 +133,10 @@ function applyParamsMetadata(
 
   if (!isNullOrUndefined(paramsList)) {
     descriptor.value = function (...args: unknown[]) {
-      const paramValues = getParamValues(oldFunc);
+      const paramValues = Reflect.getOwnMetadata(
+        paramDataMetadataKey,
+        descriptor.value,
+      );
 
       for (const obj of paramsList) {
         const value = paramValues[obj.name];

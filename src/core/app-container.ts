@@ -1,3 +1,4 @@
+import cors from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import {
   ConstructorType,
@@ -5,7 +6,6 @@ import {
   RestMethod,
   UnknownFunction,
 } from "../types/settings";
-import cors from "cors";
 import {
   bodyDataMetadataKey,
   controllerMetadataKey,
@@ -122,7 +122,7 @@ export class AppContainer {
 
     const methodPath = Reflect.getOwnMetadata(restKey, controllerMethod);
 
-    const combinedPath = `${controllerPath}${methodPath}`;
+    const combinedPath = `/${controllerPath}${methodPath}`;
 
     if (useBeforeKey != emptySymbol) {
       this.registerMiddlewares(useBeforeKey, controllerMethod, combinedPath);
@@ -148,8 +148,7 @@ export class AppContainer {
     ) as ConstructorType[];
 
     for (const middleware of middlewaresClasses) {
-      // TODO: get from DI
-      const obj = new middleware();
+      const obj = this.diContainer.get(middleware);
       const handler = (obj as Record<string, unknown>).use as ExpressUse;
 
       if (!handler) {
@@ -186,30 +185,28 @@ export class AppContainer {
 
     const registerEndpointMethod = this.restHandlers[stringKey];
 
-    registerEndpointMethod(this.app, combinedPath, controller, funcName);
+    registerEndpointMethod(combinedPath, controller, funcName);
   }
 
   private addHandler(method: RestMethod) {
     return (
-      app: Express,
       path: string,
       controller: ConstructorType,
       functionName: string,
     ) => {
       console.log(`[${controller.name}] registered ${method} ${path}`);
-      app[method](
-        path,
-        this.createHandler(
-          controller,
-          functionName,
-          method === "get" || method === "delete",
-        ),
+      const handler = this.createHandler(
+        controller,
+        functionName,
+        method === "get" || method === "delete",
       );
+
+      this.app[method](path, handler);
     };
   }
 
   private createHandler(
-    controller: ConstructorType,
+    controllerCtor: ConstructorType,
     functionName: string,
     noBody = false,
   ) {
@@ -219,9 +216,8 @@ export class AppContainer {
       next: NextFunction | undefined,
     ) => {
       try {
-        // TODO: entry point for DI
-        const obj = new controller();
-        const handler = (obj as Record<string, unknown>)[
+        const controller = this.diContainer.get(controllerCtor);
+        const handler = (controller as Record<string, unknown>)[
           functionName
         ] as UnknownFunction;
 
@@ -233,7 +229,7 @@ export class AppContainer {
         Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
         Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
 
-        const bindFunc = handler.bind(obj);
+        const bindFunc = handler.bind(controller);
 
         const result = await Promise.resolve(bindFunc());
 
@@ -253,6 +249,9 @@ export class AppContainer {
             const err = error as RequestError;
             res.status(err.code || 500);
             res.send(err.message);
+          } else {
+            res.status(500);
+            res.send("Internal server error");
           }
         }
       }

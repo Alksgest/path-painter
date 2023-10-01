@@ -10,7 +10,6 @@ export type RestMethod = "get" | "post" | "put" | "delete";
 
 export type RestHandler = {
   [key in RestMethod]: (
-    app: Express,
     path: string,
     controller: ConstructorType,
     functionName: string,
