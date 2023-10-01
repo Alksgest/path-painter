@@ -16,7 +16,7 @@ export class AppContainer {
     this.app = express();
   }
 
-  public listen(port: number, callback: () => void): void {
+  public start(port: number, callback: () => void): void {
     this.app.listen(port, callback);
   }
 
@@ -27,7 +27,7 @@ export class AppContainer {
     const controllers = config.controllers || [];
 
     controllers.forEach((controller) =>
-      this.registerController(controller as ConstructorType, this.app),
+      this.registerController(controller as ConstructorType),
     );
   }
 
@@ -40,7 +40,7 @@ export class AppContainer {
     }
   }
 
-  private registerController(controller: ConstructorType, app: Express): void {
+  private registerController(controller: ConstructorType): void {
     const controllerKeys = Reflect.getOwnMetadataKeys(controller);
 
     // wrong class registered as controller
@@ -68,27 +68,17 @@ export class AppContainer {
     const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
 
     if (useBeforeControllerKey !== emptySymbol) {
-      this.registerMiddlewares(
-        useBeforeControllerKey,
-        controller,
-        basePath,
-        app,
-      );
+      this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
     }
 
     for (const funcName of functions) {
-      this.registerEndpointWithMiddlewares(controller, funcName, basePath, app);
+      this.registerEndpointWithMiddlewares(controller, funcName, basePath);
     }
 
     const useAfterControllerKey = getUseAfterKey(controllerKeys);
 
     if (useAfterControllerKey !== emptySymbol) {
-      this.registerMiddlewares(
-        useAfterControllerKey,
-        controller,
-        basePath,
-        app,
-      );
+      this.registerMiddlewares(useAfterControllerKey, controller, basePath);
     }
   }
 
@@ -96,7 +86,6 @@ export class AppContainer {
     controller: ConstructorType,
     funcName: string,
     controllerPath: string,
-    app: Express,
   ): boolean {
     const controllerMethod = controller.prototype[funcName] as UnknownFunction;
     const funcMetadataKeys: symbol[] =
@@ -115,23 +104,13 @@ export class AppContainer {
     const combinedPath = `${controllerPath}${methodPath}`;
 
     if (useBeforeKey != emptySymbol) {
-      this.registerMiddlewares(
-        useBeforeKey,
-        controllerMethod,
-        combinedPath,
-        app,
-      );
+      this.registerMiddlewares(useBeforeKey, controllerMethod, combinedPath);
     }
 
-    this.registerEndpoint(restKey, combinedPath, app, controller, funcName);
+    this.registerEndpoint(restKey, combinedPath, controller, funcName);
 
     if (useAfterKey != emptySymbol) {
-      this.registerMiddlewares(
-        useAfterKey,
-        controllerMethod,
-        combinedPath,
-        app,
-      );
+      this.registerMiddlewares(useAfterKey, controllerMethod, combinedPath);
     }
 
     return true;
@@ -141,7 +120,6 @@ export class AppContainer {
     middlewareKey: symbol,
     controllerOrControllerMethod: ConstructorType | UnknownFunction,
     combinedPath: string,
-    app: Express,
   ): void {
     const middlewaresClasses = Reflect.getMetadata(
       middlewareKey,
@@ -160,14 +138,14 @@ export class AppContainer {
         return;
       }
 
-      app.use(
+      this.app.use(
         combinedPath,
         async (
           request: Request,
           response: Response,
           next: (err?: any) => any,
         ) => {
-          return await Promise.resolve(handler(request, response, next));
+          return handler(request, response, next);
         },
       );
     }
@@ -176,7 +154,6 @@ export class AppContainer {
   private registerEndpoint(
     restKey: symbol,
     combinedPath: string,
-    app: Express,
     controller: ConstructorType,
     funcName: string,
   ): void {
@@ -188,6 +165,6 @@ export class AppContainer {
 
     const registerEndpointMethod = restHandlers[stringKey];
 
-    registerEndpointMethod(app, combinedPath, controller, funcName);
+    registerEndpointMethod(this.app, combinedPath, controller, funcName);
   }
 }
