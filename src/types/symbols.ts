@@ -19,6 +19,9 @@ export const controllerMetadataKey = Symbol("controller");
 export const useBeforeMetadataKey = Symbol("useBefore");
 export const useAfterMetadataKey = Symbol("useAfter");
 
+export const singletonMetadataKey = Symbol("singleton");
+export const transientMetadataKey = Symbol("transient");
+
 export const emptySymbol = Symbol();
 
 export const restMethodSwitchObj: { [key: string]: symbol } = {

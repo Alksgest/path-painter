@@ -1,6 +1,6 @@
 import { Express } from "express";
 
-export type ConstructorType<T = unknown> = new (...args: unknown[]) => T;
+export type ConstructorType<T = unknown> = new (...args: any[]) => T;
 
 export type UnknownFunction<ReturnType = unknown> = (
   ...args: unknown[]

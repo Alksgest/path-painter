@@ -6,14 +6,17 @@ import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { ExpressUse } from "../types/web";
 import { restHandlers } from "./rest-handlers";
 import { AppConfig } from "../types";
+import { DiContainer } from "./di-container";
 
 export class AppContainer {
   private readonly app: Express;
+  private readonly diContainer: DiContainer;
 
   private config?: AppConfig;
 
   constructor() {
     this.app = express();
+    this.diContainer = new DiContainer();
   }
 
   public start(port: number, callback: () => void): void {
@@ -49,7 +52,7 @@ export class AppContainer {
     }
 
     const functions = Object.getOwnPropertyNames(controller.prototype).filter(
-      (f) => f != "constructor",
+      (f) => f !== "constructor",
     );
 
     if (!functions?.length) {

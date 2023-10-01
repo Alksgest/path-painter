@@ -1,10 +1,10 @@
-import { RequestError } from "../types/errors";
+import { RequestError } from "../types";
 import { Express, NextFunction, Request, Response } from "express";
 import {
   bodyDataMetadataKey,
   headerDataMetadataKey,
-  queryDataMetadataKey,
   paramDataMetadataKey,
+  queryDataMetadataKey,
 } from "../types/symbols";
 import {
   ConstructorType,
