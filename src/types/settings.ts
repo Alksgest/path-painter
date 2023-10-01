@@ -6,8 +6,10 @@ export type UnknownFunction<ReturnType = unknown> = (
   ...args: unknown[]
 ) => ReturnType;
 
+export type RestMethod = "get" | "post" | "put" | "delete";
+
 export type RestHandler = {
-  [key: string]: (
+  [key in RestMethod]: (
     app: Express,
     path: string,
     controller: ConstructorType,

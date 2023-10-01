@@ -1,11 +1,22 @@
-import express, { Express, Request, Response } from "express";
-import { ConstructorType, UnknownFunction } from "../types/settings";
+import express, { Express, NextFunction, Request, Response } from "express";
+import {
+  ConstructorType,
+  RestHandler,
+  RestMethod,
+  UnknownFunction,
+} from "../types/settings";
 import cors from "cors";
-import { controllerMetadataKey, emptySymbol } from "../types/symbols";
+import {
+  bodyDataMetadataKey,
+  controllerMetadataKey,
+  emptySymbol,
+  headerDataMetadataKey,
+  paramDataMetadataKey,
+  queryDataMetadataKey,
+} from "../types/symbols";
 import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { ExpressUse } from "../types/web";
-import { restHandlers } from "./rest-handlers";
-import { AppConfig } from "../types";
+import { AppConfig, RequestError } from "../types";
 import { DiContainer } from "./di-container";
 
 export class AppContainer {
@@ -13,6 +24,13 @@ export class AppContainer {
   private readonly diContainer: DiContainer;
 
   private config?: AppConfig;
+
+  private readonly restHandlers: RestHandler = {
+    get: this.addHandler("get").bind(this),
+    post: this.addHandler("post").bind(this),
+    put: this.addHandler("put").bind(this),
+    delete: this.addHandler("delete").bind(this),
+  };
 
   constructor() {
     this.app = express();
@@ -160,14 +178,84 @@ export class AppContainer {
     controller: ConstructorType,
     funcName: string,
   ): void {
-    const stringKey = restKey.description;
+    const stringKey = restKey.description as RestMethod;
 
     if (!stringKey) {
       return;
     }
 
-    const registerEndpointMethod = restHandlers[stringKey];
+    const registerEndpointMethod = this.restHandlers[stringKey];
 
     registerEndpointMethod(this.app, combinedPath, controller, funcName);
+  }
+
+  private addHandler(method: RestMethod) {
+    return (
+      app: Express,
+      path: string,
+      controller: ConstructorType,
+      functionName: string,
+    ) => {
+      console.log(`[${controller.name}] registered ${method} ${path}`);
+      app[method](
+        path,
+        this.createHandler(
+          controller,
+          functionName,
+          method === "get" || method === "delete",
+        ),
+      );
+    };
+  }
+
+  private createHandler(
+    controller: ConstructorType,
+    functionName: string,
+    noBody = false,
+  ) {
+    return async (
+      req: Request,
+      res: Response,
+      next: NextFunction | undefined,
+    ) => {
+      try {
+        // TODO: entry point for DI
+        const obj = new controller();
+        const handler = (obj as Record<string, unknown>)[
+          functionName
+        ] as UnknownFunction;
+
+        if (!noBody) {
+          Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
+        }
+
+        Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
+        Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
+        Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
+
+        const bindFunc = handler.bind(obj);
+
+        const result = await Promise.resolve(bindFunc());
+
+        if (result) {
+          res.json(result);
+        } else {
+          res.send();
+        }
+
+        if (next) {
+          next();
+        }
+      } catch (error: any) {
+        console.error(error);
+        if (next) {
+          if (error instanceof RequestError) {
+            const err = error as RequestError;
+            res.status(err.code || 500);
+            res.send(err.message);
+          }
+        }
+      }
+    };
   }
 }
