@@ -1,10 +1,18 @@
 import "reflect-metadata";
 import {
-  useBeforeMetadataKey,
-  useAfterMetadataKey,
   transientMetadataKey,
+  useAfterMetadataKey,
+  useBeforeMetadataKey,
 } from "../types/symbols";
 import { ConstructorType, UnknownFunction } from "../types/settings";
+
+export function Middleware(): ClassDecorator {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  return function <TFunction extends Function>(target: TFunction) {
+    Reflect.defineMetadata(transientMetadataKey, "", target);
+    return target;
+  };
+}
 
 export function UseBefore(...middlewares: ConstructorType[]): any {
   return registerMetadataAndReturnDecorator(middlewares, useBeforeMetadataKey);
@@ -18,9 +26,6 @@ function registerMetadataAndReturnDecorator(
   middlewares: ConstructorType[],
   metadataKey: symbol,
 ) {
-  for (const m of middlewares) {
-    Reflect.defineMetadata(transientMetadataKey, "", m);
-  }
   return (
     target: unknown,
     propertyKey?: string | symbol,

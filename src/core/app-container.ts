@@ -86,21 +86,21 @@ export class AppContainer {
 
     const basePath = `/${globalPrefix}${controllerPath}`;
 
-    // const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
-    //
-    // if (useBeforeControllerKey !== emptySymbol) {
-    //   this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
-    // }
+    const useBeforeControllerKey = getUseBeforeKey(controllerKeys);
+
+    if (useBeforeControllerKey !== emptySymbol) {
+      this.registerMiddlewares(useBeforeControllerKey, controller, basePath);
+    }
 
     for (const funcName of functions) {
       this.registerEndpointWithMiddlewares(controller, funcName, basePath);
     }
 
-    // const useAfterControllerKey = getUseAfterKey(controllerKeys);
-    //
-    // if (useAfterControllerKey !== emptySymbol) {
-    //   this.registerMiddlewares(useAfterControllerKey, controller, basePath);
-    // }
+    const useAfterControllerKey = getUseAfterKey(controllerKeys);
+
+    if (useAfterControllerKey !== emptySymbol) {
+      this.registerMiddlewares(useAfterControllerKey, controller, basePath);
+    }
   }
 
   private registerEndpointWithMiddlewares(
@@ -147,17 +147,7 @@ export class AppContainer {
       controllerOrControllerMethod,
     ) as ConstructorType[];
 
-    for (const middleware of middlewaresClasses) {
-      const obj = this.diContainer.get(middleware);
-      const handler = (obj as Record<string, unknown>).use as ExpressUse;
-
-      if (!handler) {
-        console.log(
-          `Class ${middleware.name} does not implement IMiddleware interface`,
-        );
-        return;
-      }
-
+    for (const middlewareType of middlewaresClasses) {
       this.app.use(
         combinedPath,
         async (
@@ -165,6 +155,18 @@ export class AppContainer {
           response: Response,
           next: (err?: any) => any,
         ) => {
+          const middleware = this.diContainer.get(middlewareType);
+          const handler = (middleware as any).use.bind(
+            middleware,
+          ) as ExpressUse;
+
+          if (!handler) {
+            console.log(
+              `Class ${middlewareType.name} does not implement IMiddleware interface`,
+            );
+            return;
+          }
+
           return handler(request, response, next);
         },
       );

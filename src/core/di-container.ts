@@ -1,9 +1,5 @@
 import { ConstructorType, UnknownFunction } from "../types/settings";
-import {
-  controllerMetadataKey,
-  singletonMetadataKey,
-  transientMetadataKey,
-} from "../types/symbols";
+import { singletonMetadataKey, transientMetadataKey } from "../types/symbols";
 import { DependencyInjectionError } from "../types";
 
 export class DiContainer {
