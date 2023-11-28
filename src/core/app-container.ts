@@ -2,7 +2,6 @@ import cors from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import {
   ConstructorType,
-  RestHandler,
   RestMethod,
   UnknownFunction,
 } from "../types/settings";
@@ -18,19 +17,13 @@ import { getRestKey, getUseAfterKey, getUseBeforeKey } from "../util";
 import { ExpressUse } from "../types/web";
 import { AppConfig, RequestError } from "../types";
 import { DiContainer } from "./di-container";
+import bodyParser from "body-parser";
 
 export class AppContainer {
   private readonly app: Express;
   private readonly diContainer: DiContainer;
 
   private config?: AppConfig;
-
-  private readonly restHandlers: RestHandler = {
-    get: this.addHandler("get").bind(this),
-    post: this.addHandler("post").bind(this),
-    put: this.addHandler("put").bind(this),
-    delete: this.addHandler("delete").bind(this),
-  };
 
   constructor() {
     this.app = express();
@@ -185,7 +178,7 @@ export class AppContainer {
       return;
     }
 
-    const registerEndpointMethod = this.restHandlers[stringKey];
+    const registerEndpointMethod = this.addHandler(stringKey);
 
     registerEndpointMethod(combinedPath, controller, funcName);
   }
@@ -198,44 +191,32 @@ export class AppContainer {
     ) => {
       console.log(`[${controller.name}] registered ${method} ${path}`);
 
-      this.app[method](path, (req, res, next) => {
-        const handler = this.createHandler(
-          controller,
-          functionName,
-          method === "get" || method === "delete",
-        );
-
+      this.app[method](path, bodyParser.json(), (req, res, next) => {
+        const handler = this.createHandler(controller, functionName);
         return handler(req, res, next);
       });
     };
   }
 
-  private createHandler(
-    controllerCtor: ConstructorType,
-    functionName: string,
-    noBody = false,
-  ) {
+  private createHandler(controllerCtor: ConstructorType, functionName: string) {
     return async (
       req: Request,
       res: Response,
       next: NextFunction | undefined,
     ) => {
+      const controller = this.diContainer.get(controllerCtor);
+      const handler = (controller as Record<string, unknown>)[
+        functionName
+      ] as UnknownFunction;
+
+      Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
+      Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
+      Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
+      Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
+
+      const bindFunc = handler.bind(controller);
+
       try {
-        const controller = this.diContainer.get(controllerCtor);
-        const handler = (controller as Record<string, unknown>)[
-          functionName
-        ] as UnknownFunction;
-
-        if (!noBody) {
-          Reflect.defineMetadata(bodyDataMetadataKey, req.body, handler);
-        }
-
-        Reflect.defineMetadata(headerDataMetadataKey, req.headers, handler);
-        Reflect.defineMetadata(queryDataMetadataKey, req.query, handler);
-        Reflect.defineMetadata(paramDataMetadataKey, req.params, handler);
-
-        const bindFunc = handler.bind(controller);
-
         const result = await Promise.resolve(bindFunc());
 
         if (result) {

@@ -99,7 +99,6 @@ function registerRestAction(
       bodyDataMetadataKey,
     );
   }
-
   applyMetadata(
     target,
     propertyKey,
@@ -141,6 +140,8 @@ function applyParamsMetadata(
       for (const obj of paramsList) {
         const value = paramValues[obj.name];
         const position = obj.position;
+
+        // TODO: try to cast parameter to selected type
 
         args[position] = value;
       }
@@ -188,7 +189,7 @@ function applyMetadata(
   return descriptor.value;
 }
 
-function applyBodyMetadata(
+function  applyBodyMetadata(
   target: object,
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
@@ -203,33 +204,33 @@ function applyBodyMetadata(
     descriptor.value = function (...args: unknown[]) {
       const body = Reflect.getOwnMetadata(metadataValueKey, descriptor.value);
 
-      const propName = funcArguments[index];
-      Object.keys(body).forEach((key) => {
-        if (propName !== key) {
-          return;
-        }
+      if (!body) {
+        return descriptor.value;
+      }
 
-        let model = body[key];
-
-        // const shouldBeValidated = Reflect.getOwnMetadataKeys(
-        //   target,
-        //   propertyKey,
-        // ).includes(validationMetadataKey);
-
-        // if (shouldBeValidated) {
-        let paramType = Reflect.getOwnMetadata(
-          "design:paramtypes",
-          target,
-          propertyKey,
-        );
-
-        paramType = paramType?.length !== undefined ? paramType[0] : paramType;
-
-        model = validateBodyModel(model, paramType);
-        // }
-
-        args[index] = model;
-      });
+      args[index] = body;
+      // TODO: fix validation of incoming model
+      // const propName = funcArguments[index];
+      // Object.keys(body).forEach((key) => {
+      //   // if (propName !== key) {
+      //   //   return;
+      //   // }
+      //
+      //   let model = body[key];
+      //
+      //
+      //   let paramType = Reflect.getOwnMetadata(
+      //     "design:paramtypes",
+      //     target,
+      //     propertyKey,
+      //   );
+      //
+      //   paramType = paramType?.length !== undefined ? paramType[0] : paramType;
+      //
+      //   model = validateBodyModel(model, paramType);
+      //
+      //   args[index] = model;
+      // });
 
       return oldFunc.apply(this, args);
     };
